@@ -257,32 +257,19 @@
           highwaist: "high-waist retro bikini set",
         };
 
-        // Plain WHITE suit on BLACK background — so the CSS multiply blend
-        // will show the user's pattern only on the suit fabric, not the background
         const prompt = `plain white ${styleMap[selectedStyle] || "swimsuit"} flat lay, isolated on pure solid black background, no pattern no texture, clean studio lighting, fashion product photography, photorealistic`;
+        const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=512&height=512&model=flux-realism&nologo=true&seed=${Math.floor(Math.random()*99999)}`;
 
-        const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=700&height=700&model=flux-realism&nologo=true&seed=${Math.floor(Math.random()*99999)}`;
-
-        setGeneratingStatus("Generating swimsuit shape…");
-
-        try {
-          await Promise.race([
-            new Promise((resolve, reject) => {
-              const img = new Image();
-              img.onload = resolve;
-              img.onerror = reject;
-              img.src = url;
-            }),
-            new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), 30000))
-          ]);
-          setGeneratedImage(url);
-          setGeneratingStatus("Applying your design…");
-        } catch {
-          // timed out or failed — fall through to SVG preview
-        }
-
+        // Go straight to step 4 with SVG preview — photo loads in background and swaps in when ready
         setGenerating(false);
         setStep(4);
+
+        // Load photo in background, swap when done (60s timeout)
+        const bgImg = new Image();
+        bgImg.onload = () => setGeneratedImage(url);
+        bgImg.onerror = () => {};
+        bgImg.src = url;
+        setTimeout(() => { bgImg.onload = null; }, 60000);
       };
 
       useEffect(() => {
@@ -633,7 +620,7 @@
                       <SuitPreview suitStyle={selectedStyle} patternUrl={uploadedImage} size={280} />
                     )}
                     {!generatedImage && (
-                      <div style={{ marginTop: 12, background: "rgba(74,144,196,.08)", borderRadius: 10, padding: "7px 14px", fontSize: 11, fontWeight: 600, color: "#4A90C4" }}>✦ Pattern preview</div>
+                      <div style={{ marginTop: 12, background: "rgba(74,144,196,.08)", borderRadius: 10, padding: "7px 14px", fontSize: 11, fontWeight: 600, color: "#4A90C4", animation: "pulse 2s ease-in-out infinite" }}>⟳ Loading photo preview…</div>
                     )}
                   </div>
                   {generatedImage && (
