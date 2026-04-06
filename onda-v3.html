@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ONDA — AI Swimwear</title>
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #EBF5FD; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes fadeUp { from { opacity:0; transform:translateY(18px); } to { opacity:1; transform:translateY(0); } }
+    @keyframes pulse { 0%,100% { opacity:.55; } 50% { opacity:1; } }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useRef, useEffect, useMemo } = React;
+
+    const STYLES = [
+      { id: "bikini", label: "Bikini", icon: "👙", desc: "Classic two-piece" },
+      { id: "onepiece", label: "One Piece", icon: "🩱", desc: "Full coverage" },
+      { id: "tankini", label: "Tankini", icon: "👗", desc: "Tank top + bottom" },
+      { id: "highwaist", label: "High Waist", icon: "✨", desc: "Retro high-rise" },
+    ];
+    const SIZES = ["XXS","XS","S","M","L","XL","XXL"];
+    const FABRICS = [
+      { id: "eco", label: "EcoStretch™", desc: "Recycled nylon blend", price: 0 },
+      { id: "lux", label: "LuxMatte™", desc: "Premium matte finish", price: 12 },
+      { id: "shimmer", label: "ShimmerWeave™", desc: "Subtle metallic sheen", price: 18 },
+    ];
+    const BASE_PRICE = 58;
+    const TRENDING = [
+      { id: "floral", icon: "🌺", label: "Floral", tag: "#1 this week", imageUrl: "https://images.pexels.com/photos/931177/pexels-photo-931177.jpeg?auto=compress&cs=tinysrgb&w=800" },
+      { id: "ocean", icon: "🌊", label: "Ocean", tag: "Trending now", imageUrl: "https://images.pexels.com/photos/1032650/pexels-photo-1032650.jpeg?auto=compress&cs=tinysrgb&w=800" },
+      { id: "abstract", icon: "🎨", label: "Abstract", tag: "Fan favourite", imageUrl: "https://images.pexels.com/photos/2693212/pexels-photo-2693212.png?auto=compress&cs=tinysrgb&w=800" },
+      { id: "animal", icon: "🐆", label: "Animal Print", tag: "Hot right now", imageUrl: "https://images.pexels.com/photos/2086361/pexels-photo-2086361.jpeg?auto=compress&cs=tinysrgb&w=800" },
+    ];
+
+    /*
+      SVG GARMENT TEMPLATES — detailed fashion-flat outlines for each suit style.
+      The uploaded pattern fills these shapes via <pattern> + <image>.
+      Seam lines, darts, and construction details are overlaid for realism.
+    */
+
+    function SuitPreview({ suitStyle, patternUrl, size, className }) {
+      const patternId = "pat-" + suitStyle + "-" + Math.random().toString(36).slice(2,8);
+      const sz = size || 300;
+
+      const svgContent = {
+        bikini: (
+          <svg viewBox="0 0 400 500" width={sz} height={sz * 1.25} xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <pattern id={patternId} patternUnits="userSpaceOnUse" width="110" height="110">
+                <image href={patternUrl} x="0" y="0" width="110" height="110" preserveAspectRatio="xMidYMid slice" />
+              </pattern>
+            </defs>
+
+            {/* ── BIKINI TOP ── */}
+            {/* Left cup */}
+            <path d="M 100,120 C 95,100 105,72 130,60 C 150,52 170,55 185,65 C 195,72 198,82 198,95 L 198,110 C 195,125 185,135 170,140 C 155,145 130,142 115,135 C 105,130 100,125 100,120 Z"
+              fill={`url(#${patternId})`} />
+            {/* Right cup */}
+            <path d="M 300,120 C 305,100 295,72 270,60 C 250,52 230,55 215,65 C 205,72 202,82 202,95 L 202,110 C 205,125 215,135 230,140 C 245,145 270,142 285,135 C 295,130 300,125 300,120 Z"
+              fill={`url(#${patternId})`} />
+            {/* Center bridge */}
+            <rect x="192" y="88" width="16" height="30" rx="3" fill={`url(#${patternId})`} />
+            {/* Band */}
+            <path d="M 85,132 C 90,128 100,125 115,135 C 135,145 165,148 198,140 L 202,140 C 235,148 265,145 285,135 C 300,125 310,128 315,132 L 312,145 C 305,142 295,140 285,148 C 265,158 235,160 202,152 L 198,152 C 165,160 135,158 115,148 C 105,140 95,142 88,145 Z"
+              fill={`url(#${patternId})`} />
+            {/* Straps */}
+            <path d="M 130,58 L 125,20 L 132,18 L 138,56" fill={`url(#${patternId})`} stroke="#00000015" strokeWidth="0.5" />
+            <path d="M 270,58 L 275,20 L 268,18 L 262,56" fill={`url(#${patternId})`} stroke="#00000015" strokeWidth="0.5" />
+            {/* Seam lines */}
+            <path d="M 198,95 L 198,140" stroke="#00000020" strokeWidth="1" fill="none" />
+            <path d="M 202,95 L 202,140" stroke="#00000020" strokeWidth="1" fill="none" />
+            <path d="M 130,62 C 155,80 170,100 170,140" stroke="#00000012" strokeWidth="0.8" fill="none" />
+            <path d="M 270,62 C 245,80 230,100 230,140" stroke="#00000012" strokeWidth="0.8" fill="none" />
+            {/* Top outline */}
+            <path d="M 100,120 C 95,100 105,72 130,60 C 150,52 170,55 185,65 C 195,72 198,82 198,95 L 198,110 C 195,125 185,135 170,140 C 155,145 130,142 115,135 C 105,130 100,125 100,120 Z" fill="none" stroke="#00000025" strokeWidth="1.2" />
+            <path d="M 300,120 C 305,100 295,72 270,60 C 250,52 230,55 215,65 C 205,72 202,82 202,95 L 202,110 C 205,125 215,135 230,140 C 245,145 270,142 285,135 C 295,130 300,125 300,120 Z" fill="none" stroke="#00000025" strokeWidth="1.2" />
+
+            {/* ── BIKINI BOTTOM ── */}
+            <path d="M 120,320 C 125,295 145,280 170,272 C 185,268 195,267 200,267 C 205,267 215,268 230,272 C 255,280 275,295 280,320 L 282,350 C 280,375 270,400 255,418 C 242,432 225,442 210,446 C 205,447 200,448 200,448 C 200,448 195,447 190,446 C 175,442 158,432 145,418 C 130,400 120,375 118,350 Z"
+              fill={`url(#${patternId})`} />
+            {/* Waistband */}
+            <path d="M 118,318 C 125,293 145,278 170,270 C 185,266 200,265 200,265 C 200,265 215,266 230,270 C 255,278 275,293 282,318 L 280,325 C 273,300 255,288 230,280 C 215,276 200,275 200,275 C 200,275 185,276 170,280 C 145,288 127,300 120,325 Z"
+              fill={`url(#${patternId})`} stroke="#00000015" strokeWidth="0.5" />
+            {/* Center seam */}
+            <path d="M 200,270 L 200,448" stroke="#00000015" strokeWidth="0.8" fill="none" />
+            {/* Side seams */}
+            <path d="M 120,320 L 118,350" stroke="#00000015" strokeWidth="0.8" fill="none" />
+            <path d="M 280,320 L 282,350" stroke="#00000015" strokeWidth="0.8" fill="none" />
+            {/* Bottom outline */}
+            <path d="M 120,320 C 125,295 145,280 170,272 C 185,268 195,267 200,267 C 205,267 215,268 230,272 C 255,280 275,295 280,320 L 282,350 C 280,375 270,400 255,418 C 242,432 225,442 210,446 C 205,447 200,448 200,448 C 200,448 195,447 190,446 C 175,442 158,432 145,418 C 130,400 120,375 118,350 Z"
+              fill="none" stroke="#00000025" strokeWidth="1.2" />
+
+            {/* Shadow/depth */}
+            <path d="M 105,118 C 100,105 108,75 130,62" stroke="#00000008" strokeWidth="8" fill="none" />
+            <path d="M 295,118 C 300,105 292,75 270,62" stroke="#00000008" strokeWidth="8" fill="none" />
+          </svg>
+        ),
+
+        onepiece: (
+          <svg viewBox="0 0 400 550" width={sz} height={sz * 1.375} xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <pattern id={patternId} patternUnits="userSpaceOnUse" width="110" height="110">
+                <image href={patternUrl} x="0" y="0" width="110" height="110" preserveAspectRatio="xMidYMid slice" />
+              </pattern>
+            </defs>
+
+            {/* Main body */}
+            <path d="M 120,45 C 130,30 155,20 175,18 C 190,16 200,18 200,18 C 200,18 210,16 225,18 C 245,20 270,30 280,45 L 290,70 C 295,90 298,110 300,135 L 302,170 C 303,200 302,230 298,260 L 295,290 C 290,315 282,340 272,365 C 264,385 255,400 245,418 C 235,435 222,448 210,455 C 205,458 200,460 200,460 C 200,460 195,458 190,455 C 178,448 165,435 155,418 C 145,400 136,385 128,365 C 118,340 110,315 105,290 L 102,260 C 98,230 97,200 98,170 L 100,135 C 102,110 105,90 110,70 Z"
+              fill={`url(#${patternId})`} />
+            {/* Straps */}
+            <path d="M 155,22 L 140,0 L 148,0 L 162,20" fill={`url(#${patternId})`} stroke="#00000015" strokeWidth="0.5" />
+            <path d="M 245,22 L 260,0 L 252,0 L 238,20" fill={`url(#${patternId})`} stroke="#00000015" strokeWidth="0.5" />
+            {/* Neckline detail */}
+            <path d="M 155,22 C 170,35 185,42 200,45 C 215,42 230,35 245,22" stroke="#00000020" strokeWidth="1" fill="none" />
+            {/* Bust seam */}
+            <path d="M 120,100 C 150,115 175,120 200,118 C 225,120 250,115 280,100" stroke="#00000015" strokeWidth="0.8" fill="none" />
+            {/* Waist seam */}
+            <path d="M 108,250 C 140,240 170,235 200,234 C 230,235 260,240 292,250" stroke="#00000012" strokeWidth="0.8" fill="none" />
+            {/* Center seam */}
+            <path d="M 200,45 L 200,460" stroke="#00000012" strokeWidth="0.8" fill="none" />
+            {/* Side curves for depth */}
+            <path d="M 110,70 C 105,100 100,140 98,170" stroke="#00000008" strokeWidth="6" fill="none" />
+            <path d="M 290,70 C 295,100 300,140 302,170" stroke="#00000008" strokeWidth="6" fill="none" />
+            {/* Outline */}
+            <path d="M 120,45 C 130,30 155,20 175,18 C 190,16 200,18 200,18 C 200,18 210,16 225,18 C 245,20 270,30 280,45 L 290,70 C 295,90 298,110 300,135 L 302,170 C 303,200 302,230 298,260 L 295,290 C 290,315 282,340 272,365 C 264,385 255,400 245,418 C 235,435 222,448 210,455 C 205,458 200,460 200,460 C 200,460 195,458 190,455 C 178,448 165,435 155,418 C 145,400 136,385 128,365 C 118,340 110,315 105,290 L 102,260 C 98,230 97,200 98,170 L 100,135 C 102,110 105,90 110,70 Z"
+              fill="none" stroke="#00000025" strokeWidth="1.2" />
+          </svg>
+        ),
+
+        tankini: (
+          <svg viewBox="0 0 400 520" width={sz} height={sz * 1.3} xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <pattern id={patternId} patternUnits="userSpaceOnUse" width="110" height="110">
+                <image href={patternUrl} x="0" y="0" width="110" height="110" preserveAspectRatio="xMidYMid slice" />
+              </pattern>
+            </defs>
+
+            {/* ── TANK TOP ── */}
+            <path d="M 130,40 C 145,25 170,18 185,16 C 195,15 200,16 200,16 C 200,16 205,15 215,16 C 230,18 255,25 270,40 L 280,60 C 285,80 288,100 290,125 L 292,155 C 292,175 290,195 285,215 C 280,230 270,240 255,245 C 235,250 215,252 200,252 C 185,252 165,250 145,245 C 130,240 120,230 115,215 C 110,195 108,175 108,155 L 110,125 C 112,100 115,80 120,60 Z"
+              fill={`url(#${patternId})`} />
+            {/* Straps */}
+            <path d="M 155,20 L 142,0 L 150,0 L 160,18" fill={`url(#${patternId})`} stroke="#00000015" strokeWidth="0.5" />
+            <path d="M 245,20 L 258,0 L 250,0 L 240,18" fill={`url(#${patternId})`} stroke="#00000015" strokeWidth="0.5" />
+            {/* Neckline */}
+            <path d="M 155,20 C 170,32 185,38 200,40 C 215,38 230,32 245,20" stroke="#00000020" strokeWidth="1" fill="none" />
+            {/* Hem */}
+            <path d="M 145,245 C 165,250 185,252 200,252 C 215,252 235,250 255,245" stroke="#00000020" strokeWidth="1.2" fill="none" />
+            {/* Bust dart */}
+            <path d="M 120,95 C 150,110 175,115 200,113 C 225,115 250,110 280,95" stroke="#00000012" strokeWidth="0.8" fill="none" />
+            {/* Top outline */}
+            <path d="M 130,40 C 145,25 170,18 185,16 C 195,15 200,16 200,16 C 200,16 205,15 215,16 C 230,18 255,25 270,40 L 280,60 C 285,80 288,100 290,125 L 292,155 C 292,175 290,195 285,215 C 280,230 270,240 255,245 C 235,250 215,252 200,252 C 185,252 165,250 145,245 C 130,240 120,230 115,215 C 110,195 108,175 108,155 L 110,125 C 112,100 115,80 120,60 Z"
+              fill="none" stroke="#00000025" strokeWidth="1.2" />
+
+            {/* ── BOTTOM ── */}
+            <path d="M 130,330 C 135,308 150,292 172,284 C 185,280 195,278 200,278 C 205,278 215,280 228,284 C 250,292 265,308 270,330 L 272,358 C 270,382 262,405 248,422 C 236,435 222,444 210,448 C 205,450 200,451 200,451 C 200,451 195,450 190,448 C 178,444 164,435 152,422 C 138,405 130,382 128,358 Z"
+              fill={`url(#${patternId})`} />
+            {/* Bottom outline */}
+            <path d="M 130,330 C 135,308 150,292 172,284 C 185,280 195,278 200,278 C 205,278 215,280 228,284 C 250,292 265,308 270,330 L 272,358 C 270,382 262,405 248,422 C 236,435 222,444 210,448 C 205,450 200,451 200,451 C 200,451 195,450 190,448 C 178,444 164,435 152,422 C 138,405 130,382 128,358 Z"
+              fill="none" stroke="#00000025" strokeWidth="1.2" />
+            <path d="M 200,280 L 200,451" stroke="#00000012" strokeWidth="0.8" fill="none" />
+          </svg>
+        ),
+
+        highwaist: (
+          <svg viewBox="0 0 400 520" width={sz} height={sz * 1.3} xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <pattern id={patternId} patternUnits="userSpaceOnUse" width="110" height="110">
+                <image href={patternUrl} x="0" y="0" width="110" height="110" preserveAspectRatio="xMidYMid slice" />
+              </pattern>
+            </defs>
+
+            {/* ── BIKINI TOP (triangle style) ── */}
+            <path d="M 108,125 C 112,95 125,72 148,58 C 162,50 178,52 190,60 C 196,65 198,72 198,80 L 198,105 C 195,118 185,128 170,132 C 152,136 132,133 118,128 Z"
+              fill={`url(#${patternId})`} />
+            <path d="M 292,125 C 288,95 275,72 252,58 C 238,50 222,52 210,60 C 204,65 202,72 202,80 L 202,105 C 205,118 215,128 230,132 C 248,136 268,133 282,128 Z"
+              fill={`url(#${patternId})`} />
+            {/* Center string */}
+            <path d="M 198,85 L 202,85" stroke="#00000030" strokeWidth="2" />
+            {/* Neck strings */}
+            <path d="M 148,56 L 165,15 L 200,8 L 235,15 L 252,56" stroke="#00000020" strokeWidth="2" fill="none" />
+            {/* Side strings */}
+            <path d="M 108,125 L 80,130" stroke="#00000020" strokeWidth="2" fill="none" />
+            <path d="M 292,125 L 320,130" stroke="#00000020" strokeWidth="2" fill="none" />
+            {/* Top outlines */}
+            <path d="M 108,125 C 112,95 125,72 148,58 C 162,50 178,52 190,60 C 196,65 198,72 198,80 L 198,105 C 195,118 185,128 170,132 C 152,136 132,133 118,128 Z" fill="none" stroke="#00000025" strokeWidth="1.2" />
+            <path d="M 292,125 C 288,95 275,72 252,58 C 238,50 222,52 210,60 C 204,65 202,72 202,80 L 202,105 C 205,118 215,128 230,132 C 248,136 268,133 282,128 Z" fill="none" stroke="#00000025" strokeWidth="1.2" />
+
+            {/* ── HIGH WAIST BOTTOM ── */}
+            <path d="M 115,238 C 118,222 130,210 152,204 C 170,198 188,196 200,196 C 212,196 230,198 248,204 C 270,210 282,222 285,238 L 288,270 L 290,300 C 290,330 284,360 274,385 C 264,405 252,422 238,435 C 225,445 212,452 205,455 C 202,456 200,456 200,456 C 200,456 198,456 195,455 C 188,452 175,445 162,435 C 148,422 136,405 126,385 C 116,360 110,330 110,300 L 112,270 Z"
+              fill={`url(#${patternId})`} />
+            {/* Waistband */}
+            <path d="M 115,238 C 118,222 130,212 152,206 C 170,200 188,198 200,198 C 212,198 230,200 248,206 C 270,212 282,222 285,238 L 284,250 C 280,234 268,226 248,220 C 230,216 212,214 200,214 C 188,214 170,216 152,220 C 132,226 120,234 116,250 Z"
+              fill={`url(#${patternId})`} stroke="#00000018" strokeWidth="0.8" />
+            {/* Center seam */}
+            <path d="M 200,198 L 200,456" stroke="#00000012" strokeWidth="0.8" fill="none" />
+            {/* Side seams */}
+            <path d="M 115,238 L 110,300" stroke="#00000012" strokeWidth="0.8" fill="none" />
+            <path d="M 285,238 L 290,300" stroke="#00000012" strokeWidth="0.8" fill="none" />
+            {/* Outline */}
+            <path d="M 115,238 C 118,222 130,210 152,204 C 170,198 188,196 200,196 C 212,196 230,198 248,204 C 270,210 282,222 285,238 L 288,270 L 290,300 C 290,330 284,360 274,385 C 264,405 252,422 238,435 C 225,445 212,452 205,455 C 202,456 200,456 200,456 C 200,456 198,456 195,455 C 188,452 175,445 162,435 C 148,422 136,405 126,385 C 116,360 110,330 110,300 L 112,270 Z"
+              fill="none" stroke="#00000025" strokeWidth="1.2" />
+          </svg>
+        ),
+      };
+
+      return svgContent[suitStyle] || null;
+    }
+
+    function Pill({ selected, onClick, children }) {
+      return (
+        <button onClick={onClick} style={{
+          padding: "10px 20px", borderRadius: 99,
+          border: selected ? "2px solid #1a1a1a" : "1.5px solid #A8CCE5",
+          background: selected ? "#1a1a1a" : "transparent",
+          color: selected ? "#fff" : "#1a1a1a",
+          fontFamily: "'DM Sans', sans-serif", fontSize: 14,
+          fontWeight: selected ? 600 : 400, cursor: "pointer", transition: "all .2s",
+        }}>{children}</button>
+      );
+    }
+
+    // Paste your Google Apps Script web app URL here after setup:
+    const APPS_SCRIPT_URL = "YOUR_APPS_SCRIPT_URL_HERE";
+
+    // Paste your Gemini API key here:
+    const GEMINI_API_KEY = "AIzaSyAWMYegaVRUJMRU1xsBNRYud_aTY-9jNxc";
+
+    async function imageUrlToBase64(url) {
+      if (url.startsWith("data:")) {
+        return { data: url.split(",")[1], mimeType: url.split(";")[0].split(":")[1] };
+      }
+      const resp = await fetch(url);
+      const blob = await resp.blob();
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve({ data: reader.result.split(",")[1], mimeType: blob.type });
+        reader.readAsDataURL(blob);
+      });
+    }
+
+    function App() {
+      const [step, setStep] = useState(0);
+      const [uploadedImage, setUploadedImage] = useState(null);
+      const [imageName, setImageName] = useState("");
+      const [selectedStyle, setSelectedStyle] = useState(null);
+      const [selectedSize, setSelectedSize] = useState("M");
+      const [selectedFabric, setSelectedFabric] = useState("eco");
+      const [dragOver, setDragOver] = useState(false);
+      const [generating, setGenerating] = useState(false);
+      const [generatingStatus, setGeneratingStatus] = useState("");
+      const [generatedImage, setGeneratedImage] = useState(null);
+      const [generateError, setGenerateError] = useState(null);
+      const fileRef = useRef();
+
+      const fabric = FABRICS.find(f => f.id === selectedFabric);
+      const totalPrice = BASE_PRICE + (fabric?.price || 0);
+
+      const handleFile = (file) => {
+        if (!file) return;
+        setImageName(file.name);
+        const reader = new FileReader();
+        reader.onload = (e) => { setUploadedImage(e.target.result); };
+        reader.readAsDataURL(file);
+      };
+
+      const handleTrending = (design) => {
+        setImageName(design.icon + " " + design.label);
+        setUploadedImage(design.imageUrl);
+      };
+
+      const handlePlaceOrder = () => {
+        const sl = STYLES.find(s => s.id === selectedStyle);
+        const orderData = {
+          timestamp: new Date().toLocaleString(),
+          style: sl?.label || "",
+          size: selectedSize,
+          fabric: fabric?.label || "",
+          total: "$" + totalPrice + ".00",
+          design: imageName,
+        };
+        if (APPS_SCRIPT_URL !== "YOUR_APPS_SCRIPT_URL_HERE") {
+          fetch(APPS_SCRIPT_URL, {
+            method: "POST",
+            mode: "no-cors",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(orderData),
+          }).catch(() => {});
+        }
+        setStep(6);
+      };
+
+      const handleGenerate = async () => {
+        setGenerating(true);
+        setGeneratedImage(null);
+        setGenerateError(null);
+
+        const styleLabels = {
+          bikini:    "triangle bikini top and high-cut bikini bottoms swimsuit set",
+          onepiece:  "sleek one-piece swimsuit",
+          tankini:   "tankini swimsuit with tank top and bikini bottoms",
+          highwaist: "high-waist retro bikini set with triangle top",
+        };
+        const styleLabel = styleLabels[selectedStyle] || "swimsuit";
+
+        try {
+          // ── Step 1: describe the uploaded pattern using Gemini Flash ──
+          setGeneratingStatus("Analyzing your design pattern…");
+          const { data, mimeType } = await imageUrlToBase64(uploadedImage);
+
+          const descResp = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                contents: [{
+                  parts: [
+                    { text: "Describe this image as a swimwear fabric print in 2-3 sentences. Focus only on the visual design: colors, patterns, shapes, textures, motifs. Be specific and vivid. Do not mention the word 'uploaded' or refer to it as an image." },
+                    { inline_data: { mime_type: mimeType, data } }
+                  ]
+                }]
+              })
+            }
+          );
+          const descResult = await descResp.json();
+          if (descResult.error) throw new Error("Pattern analysis failed: " + descResult.error.message);
+          const patternDesc = descResult.candidates?.[0]?.content?.parts?.[0]?.text || "vibrant colorful printed fabric";
+
+          // ── Step 2: generate photorealistic swimsuit with Imagen 3 ──
+          setGeneratingStatus("Generating photorealistic swimsuit…");
+          const prompt = `High-end fashion catalog product photography of a ${styleLabel}. The swimsuit is made from fabric printed with the following design: ${patternDesc}. Photographed as a professional flat lay on a pure white background. The swimsuit looks brand new, perfectly laid out, showing all panels clearly. Photorealistic, crisp studio lighting, sharp fabric texture detail, 4K quality, no model, no props.`;
+
+          const imgResp = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${GEMINI_API_KEY}`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                instances: [{ prompt }],
+                parameters: { sampleCount: 1, aspectRatio: "1:1" }
+              })
+            }
+          );
+          const imgResult = await imgResp.json();
+          if (imgResult.error) throw new Error("Image generation failed: " + imgResult.error.message);
+
+          const b64 = imgResult.predictions?.[0]?.bytesBase64Encoded;
+          const imgMime = imgResult.predictions?.[0]?.mimeType || "image/png";
+          if (!b64) throw new Error("No image returned from Imagen.");
+
+          setGeneratedImage(`data:${imgMime};base64,${b64}`);
+
+        } catch (err) {
+          console.error("Generation error:", err);
+          setGenerateError(err.message || "Generation failed");
+        }
+
+        setGenerating(false);
+        setStep(4);
+      };
+
+      useEffect(() => {
+        const link = document.createElement("link");
+        link.href = "https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap";
+        link.rel = "stylesheet";
+        document.head.appendChild(link);
+      }, []);
+
+      const cs = { minHeight: "100vh", fontFamily: "'DM Sans', sans-serif", color: "#1a1a1a", background: "#EBF5FD" };
+
+      /* ── LANDING ── */
+      if (step === 0) {
+        return (
+          <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", padding: 24, background: "linear-gradient(160deg, #EBF5FD 0%, #D6EAF8 100%)", fontFamily: "'DM Sans', sans-serif", position: "relative" }}>
+            <div style={{ position: "absolute", width: 480, height: 480, borderRadius: "50%", background: "radial-gradient(circle, rgba(74,144,196,.12) 0%, transparent 70%)", top: -100, right: -80, pointerEvents: "none" }} />
+            <div style={{ position: "absolute", width: 360, height: 360, borderRadius: "50%", background: "radial-gradient(circle, rgba(27,58,92,.08) 0%, transparent 70%)", bottom: -60, left: -60, pointerEvents: "none" }} />
+            <div style={{ fontSize: 12, letterSpacing: 5, textTransform: "uppercase", color: "#4A90C4", marginBottom: 20, fontWeight: 600 }}>Custom Swimwear</div>
+            <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: "clamp(44px, 8vw, 76px)", fontWeight: 400, lineHeight: 1.05, margin: 0, color: "#1B3A5C", maxWidth: 680 }}>
+              Made for{" "}<em style={{ fontStyle: "italic", color: "#4A90C4" }}>You</em>
+            </h1>
+            <p style={{ fontSize: 17, color: "#3E6480", maxWidth: 420, lineHeight: 1.65, margin: "24px 0 40px", fontWeight: 300 }}>
+              Pick your style, choose a pattern, and we'll handle everything — custom-made and delivered to your door.
+            </p>
+            <button onClick={() => setStep(1)} style={{ padding: "16px 52px", fontSize: 16, fontWeight: 600, fontFamily: "'DM Sans', sans-serif", background: "#1B3A5C", color: "#fff", border: "none", borderRadius: 99, cursor: "pointer", boxShadow: "0 4px 24px rgba(27,58,92,.25)" }}>Start Designing →</button>
+            <div style={{ marginTop: 56, display: "flex", gap: 36, color: "#7AAEC8", fontSize: 13 }}>
+              <span>✦ Made to order</span><span>✦ Ships in 7 days</span><span>✦ Sizes XXS – XXL</span>
+            </div>
+          </div>
+        );
+      }
+
+      // ── PLACEHOLDER (step 0 old sections removed) ──
+      if (false) {
+        return (
+          <div style={{ ...cs, overflowX: "hidden" }}>
+            {/* Nav */}
+            <nav style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 48px", position: "absolute", top: 0, left: 0, right: 0, zIndex: 10 }}>
+              <div style={{ display: "flex", gap: 28 }}>
+                {["Shop", "Collections", "Sale"].map(l => (
+                  <a key={l} href="#" style={{ fontSize: 13, fontWeight: 500, color: "#fff", textDecoration: "none", letterSpacing: 1, textTransform: "uppercase", opacity: .9 }}>{l}</a>
+                ))}
+              </div>
+              <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 26, color: "#fff", letterSpacing: 2 }}>ONDA</div>
+              <div style={{ display: "flex", gap: 28 }}>
+                {["Search", "Account", "Bag (0)"].map(l => (
+                  <a key={l} href="#" style={{ fontSize: 13, fontWeight: 500, color: "#fff", textDecoration: "none", letterSpacing: 1, textTransform: "uppercase", opacity: .9 }}>{l}</a>
+                ))}
+              </div>
+            </nav>
+
+            {/* Hero */}
+            <div style={{ position: "relative", height: "100vh", overflow: "hidden" }}>
+              <img
+                src="https://images.pexels.com/photos/1575439/pexels-photo-1575439.jpeg?auto=compress&cs=tinysrgb&w=1600"
+                alt="hero"
+                style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center 30%" }}
+              />
+              <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(0,0,0,.25) 0%, rgba(0,0,0,.15) 50%, rgba(0,0,0,.45) 100%)" }} />
+              <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", padding: 24 }}>
+                <div style={{ fontSize: 11, letterSpacing: 5, textTransform: "uppercase", color: "rgba(255,255,255,.8)", marginBottom: 20, fontWeight: 500 }}>New Collection — Summer 2025</div>
+                <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: "clamp(48px, 8vw, 88px)", fontWeight: 400, lineHeight: 1.05, margin: 0, color: "#fff", maxWidth: 750 }}>
+                  Made for the<br /><em style={{ fontStyle: "italic" }}>Water</em>
+                </h1>
+                <p style={{ fontSize: 17, color: "rgba(255,255,255,.85)", maxWidth: 400, lineHeight: 1.65, margin: "24px 0 40px", fontWeight: 300 }}>
+                  Swimwear designed around you. Choose your style, fabric, and fit — made to order, delivered in days.
+                </p>
+                <div style={{ display: "flex", gap: 14 }}>
+                  <button onClick={() => setStep(1)} style={{ padding: "16px 40px", fontSize: 14, fontWeight: 600, fontFamily: "'DM Sans', sans-serif", background: "#fff", color: "#1a1a1a", border: "none", borderRadius: 99, cursor: "pointer", letterSpacing: .5 }}>Shop Now</button>
+                  <button style={{ padding: "16px 40px", fontSize: 14, fontWeight: 600, fontFamily: "'DM Sans', sans-serif", background: "transparent", color: "#fff", border: "2px solid rgba(255,255,255,.7)", borderRadius: 99, cursor: "pointer", letterSpacing: .5 }}>View Lookbook</button>
+                </div>
+              </div>
+              <div style={{ position: "absolute", bottom: 32, left: "50%", transform: "translateX(-50%)", display: "flex", gap: 8 }}>
+                {[0,1,2].map(i => <div key={i} style={{ width: i===0?24:8, height: 4, borderRadius: 99, background: i===0?"#fff":"rgba(255,255,255,.4)" }} />)}
+              </div>
+            </div>
+
+            {/* Category strip */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 2, background: "#C5DCF0" }}>
+              {[
+                { label: "Bikinis", img: "https://images.pexels.com/photos/1371360/pexels-photo-1371360.jpeg?auto=compress&cs=tinysrgb&w=600" },
+                { label: "One Pieces", img: "https://images.pexels.com/photos/1549200/pexels-photo-1549200.jpeg?auto=compress&cs=tinysrgb&w=600" },
+                { label: "Cover-Ups", img: "https://images.pexels.com/photos/3155666/pexels-photo-3155666.jpeg?auto=compress&cs=tinysrgb&w=600" },
+                { label: "Custom Design", img: "https://images.pexels.com/photos/3826435/pexels-photo-3826435.jpeg?auto=compress&cs=tinysrgb&w=600", custom: true },
+              ].map(cat => (
+                <div key={cat.label} onClick={cat.custom ? () => setStep(1) : undefined} style={{ position: "relative", height: 340, overflow: "hidden", cursor: cat.custom ? "pointer" : "default" }}>
+                  <img src={cat.img} alt={cat.label} style={{ width: "100%", height: "100%", objectFit: "cover", transition: "transform .4s ease" }}
+                    onMouseEnter={e => e.target.style.transform="scale(1.04)"}
+                    onMouseLeave={e => e.target.style.transform="scale(1)"}
+                  />
+                  <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,.45) 0%, transparent 55%)" }} />
+                  <div style={{ position: "absolute", bottom: 22, left: 0, right: 0, textAlign: "center" }}>
+                    <div style={{ color: "#fff", fontWeight: 600, fontSize: 15, letterSpacing: 1.5, textTransform: "uppercase" }}>{cat.label}</div>
+                    {cat.custom && <div style={{ color: "rgba(255,255,255,.75)", fontSize: 11, marginTop: 4, letterSpacing: 1 }}>Design Yours →</div>}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Feature row */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", minHeight: 480 }}>
+              <img src="https://images.pexels.com/photos/1430672/pexels-photo-1430672.jpeg?auto=compress&cs=tinysrgb&w=900" alt="feature" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", padding: "60px 64px", background: "#D6EAF8" }}>
+                <div style={{ fontSize: 11, letterSpacing: 4, textTransform: "uppercase", color: "#4A90C4", marginBottom: 18, fontWeight: 600 }}>Our Promise</div>
+                <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 38, fontWeight: 400, lineHeight: 1.2, margin: "0 0 20px", color: "#1B3A5C" }}>Every suit,<br /><em>perfectly yours</em></h2>
+                <p style={{ fontSize: 15, color: "#3E6480", lineHeight: 1.75, margin: "0 0 36px", maxWidth: 380 }}>
+                  We believe swimwear should fit your life, not the other way around. Choose from our curated styles or create something completely custom — your design, your size, your fabric.
+                </p>
+                <div style={{ display: "flex", flexDirection: "column", gap: 14, marginBottom: 36 }}>
+                  {["Sizes XXS – XXL, made to order", "Premium eco-friendly fabrics", "Free shipping on orders over $75", "Easy 30-day returns"].map(f => (
+                    <div key={f} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 14, color: "#1B3A5C" }}>
+                      <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#4A90C4", flexShrink: 0 }} />
+                      {f}
+                    </div>
+                  ))}
+                </div>
+                <button onClick={() => setStep(1)} style={{ alignSelf: "flex-start", padding: "14px 36px", fontSize: 14, fontWeight: 600, fontFamily: "'DM Sans', sans-serif", background: "#1B3A5C", color: "#fff", border: "none", borderRadius: 99, cursor: "pointer", letterSpacing: .5 }}>Start Designing</button>
+              </div>
+            </div>
+
+            {/* Testimonials */}
+            <div style={{ background: "#EBF5FD", padding: "72px 48px", textAlign: "center" }}>
+              <div style={{ fontSize: 11, letterSpacing: 4, textTransform: "uppercase", color: "#4A90C4", marginBottom: 12, fontWeight: 600 }}>What customers say</div>
+              <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 28, fontWeight: 400, margin: "0 0 48px", color: "#1B3A5C" }}>Loved by thousands</h3>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 24, maxWidth: 900, margin: "0 auto" }}>
+                {[
+                  { quote: "The fit is unreal. I've never felt this confident in a swimsuit before.", name: "Mia T.", loc: "Los Angeles" },
+                  { quote: "I uploaded a photo of my grandmother's fabric and they turned it into the most beautiful one-piece.", name: "Sofia R.", loc: "Miami" },
+                  { quote: "Arrived in 8 days and looks exactly like the preview. Absolutely obsessed.", name: "Lauren K.", loc: "New York" },
+                ].map(t => (
+                  <div key={t.name} style={{ background: "#fff", borderRadius: 16, padding: "28px 24px", textAlign: "left", border: "1px solid #C5DCF0" }}>
+                    <div style={{ fontSize: 22, color: "#A8CCE5", marginBottom: 12, letterSpacing: 2 }}>❝</div>
+                    <p style={{ fontSize: 14, lineHeight: 1.75, color: "#2E5470", margin: "0 0 20px" }}>{t.quote}</p>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: "#1B3A5C" }}>{t.name}</div>
+                    <div style={{ fontSize: 12, color: "#7AAEC8" }}>{t.loc}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div style={{ background: "#1B3A5C", color: "#fff", padding: "48px 48px 32px", display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 32 }}>
+              <div>
+                <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 22, marginBottom: 14, letterSpacing: 1 }}>ONDA</div>
+                <p style={{ fontSize: 13, color: "#7AAEC8", lineHeight: 1.7, margin: 0 }}>Swimwear made for the water and everything around it.</p>
+              </div>
+              {[
+                { title: "Shop", links: ["Bikinis", "One Pieces", "Tankinis", "Custom Design"] },
+                { title: "Help", links: ["Sizing Guide", "Shipping", "Returns", "Contact Us"] },
+                { title: "Company", links: ["About", "Sustainability", "Careers", "Press"] },
+              ].map(col => (
+                <div key={col.title}>
+                  <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 3, textTransform: "uppercase", color: "#7AAEC8", marginBottom: 14 }}>{col.title}</div>
+                  {col.links.map(l => <div key={l} style={{ fontSize: 13, color: "#A8CCE5", marginBottom: 8, cursor: "pointer" }}>{l}</div>)}
+                </div>
+              ))}
+            </div>
+            <div style={{ background: "#142C47", borderTop: "1px solid #1E4570", padding: "16px 48px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div style={{ fontSize: 12, color: "#4A7FA0" }}>© 2025 ONDA. All rights reserved.</div>
+              <div style={{ display: "flex", gap: 20 }}>
+                {["Instagram", "TikTok", "Pinterest"].map(s => <a key={s} href="#" style={{ fontSize: 12, color: "#4A7FA0", textDecoration: "none" }}>{s}</a>)}
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      const Header = () => (
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 32px", borderBottom: "1px solid #C5DCF0", background: "#fff" }}>
+          <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 22, cursor: "pointer", color: "#1B3A5C" }} onClick={() => setStep(0)}>ONDA</div>
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            {["Upload","Style","Customize","Preview"].map((s,i) => (
+              <div key={s} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <div style={{ width: 28, height: 28, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 600, background: step >= i+1 ? "#1B3A5C" : "#C5DCF0", color: step >= i+1 ? "#fff" : "#7AAEC8" }}>{i+1}</div>
+                {i < 3 && <div style={{ width: 24, height: 1.5, background: step > i+1 ? "#1B3A5C" : "#C5DCF0" }} />}
+              </div>
+            ))}
+          </div>
+          <div style={{ fontSize: 14, color: "#4A90C4", fontWeight: 600 }}>${totalPrice}.00</div>
+        </div>
+      );
+
+      /* ── DESIGN (style + pattern, combined) ── */
+      if (step === 1) {
+        const canProceed = selectedStyle && uploadedImage;
+        return (
+          <div style={cs}><Header />
+            <div style={{ maxWidth: 900, margin: "48px auto", padding: "0 24px" }}>
+
+              {/* Style picker */}
+              <div style={{ textAlign: "center", marginBottom: 40 }}>
+                <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 30, fontWeight: 400, margin: "0 0 6px", color: "#1B3A5C" }}>Choose your style</h2>
+                <p style={{ color: "#7AAEC8", fontSize: 14, margin: 0 }}>Pick the silhouette you want to wear</p>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14, marginBottom: 52 }}>
+                {STYLES.map(s => (
+                  <div key={s.id} onClick={() => setSelectedStyle(s.id)}
+                    style={{ border: selectedStyle === s.id ? "2.5px solid #1B3A5C" : "1.5px solid #C5DCF0", borderRadius: 18, cursor: "pointer", background: "#fff", transition: "all .2s", boxShadow: selectedStyle === s.id ? "0 8px 28px rgba(27,58,92,.14)" : "0 2px 8px rgba(0,0,0,.04)", transform: selectedStyle === s.id ? "translateY(-4px)" : "none", padding: uploadedImage ? "20px 10px 14px" : "28px 16px 20px", display: "flex", flexDirection: "column", alignItems: "center" }}>
+                    {uploadedImage ? (
+                      <div style={{ height: 200, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <SuitPreview suitStyle={s.id} patternUrl={uploadedImage} size={140} />
+                      </div>
+                    ) : (
+                      <div style={{ fontSize: 48, marginBottom: 10 }}>{s.icon}</div>
+                    )}
+                    <div style={{ fontWeight: 600, fontSize: 15, marginTop: 6, color: "#1B3A5C" }}>{s.label}</div>
+                    <div style={{ fontSize: 12, color: "#7AAEC8", marginTop: 3 }}>{s.desc}</div>
+                    {selectedStyle === s.id && <div style={{ marginTop: 8, width: 6, height: 6, borderRadius: "50%", background: "#4A90C4" }} />}
+                  </div>
+                ))}
+              </div>
+
+              {/* Trending designs */}
+              <div style={{ textAlign: "center", marginBottom: 20 }}>
+                <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 30, fontWeight: 400, margin: "0 0 6px", color: "#1B3A5C" }}>Pick a trending pattern</h2>
+                <p style={{ color: "#7AAEC8", fontSize: 14, margin: 0 }}>Or upload your own below</p>
+              </div>
+              <div style={{ display: "flex", gap: 14, justifyContent: "center", flexWrap: "wrap", marginBottom: 40 }}>
+                {TRENDING.map(t => (
+                  <button key={t.id} onClick={() => handleTrending(t)}
+                    style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, padding: "0 0 12px", width: 130, borderRadius: 16, border: uploadedImage === t.imageUrl ? "2.5px solid #1B3A5C" : "1.5px solid #C5DCF0", background: "#fff", cursor: "pointer", fontFamily: "'DM Sans', sans-serif", overflow: "hidden", boxShadow: uploadedImage === t.imageUrl ? "0 6px 20px rgba(27,58,92,.14)" : "0 2px 8px rgba(0,0,0,.04)", transition: "all .2s" }}>
+                    <img src={t.imageUrl} alt={t.label} style={{ width: "100%", height: 80, objectFit: "cover" }} />
+                    <span style={{ fontSize: 16, marginTop: 2 }}>{t.icon}</span>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: "#1B3A5C" }}>{t.label}</span>
+                    <span style={{ fontSize: 10, color: "#4A90C4", fontWeight: 600 }}>{t.tag}</span>
+                  </button>
+                ))}
+              </div>
+
+              {/* Upload */}
+              <div
+                onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+                onDragLeave={() => setDragOver(false)}
+                onDrop={(e) => { e.preventDefault(); setDragOver(false); handleFile(e.dataTransfer.files[0]); }}
+                onClick={() => fileRef.current?.click()}
+                style={{ border: dragOver ? "2px solid #4A90C4" : "2px dashed #A8CCE5", borderRadius: 18, padding: "40px", cursor: "pointer", background: dragOver ? "rgba(74,144,196,.05)" : "#fff", textAlign: "center", marginBottom: 36 }}>
+                {uploadedImage && !TRENDING.find(t => t.imageUrl === uploadedImage) ? (
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 14 }}>
+                    <img src={uploadedImage} alt="" style={{ width: 56, height: 56, borderRadius: 10, objectFit: "cover", border: "1.5px solid #C5DCF0" }} />
+                    <div style={{ textAlign: "left" }}>
+                      <div style={{ fontWeight: 600, fontSize: 14, color: "#1B3A5C" }}>{imageName}</div>
+                      <div style={{ fontSize: 12, color: "#7AAEC8", marginTop: 2 }}>Click to change</div>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div style={{ fontSize: 36, marginBottom: 10 }}>📸</div>
+                    <div style={{ fontSize: 15, fontWeight: 500, color: "#1B3A5C", marginBottom: 4 }}>Upload your own design</div>
+                    <div style={{ fontSize: 13, color: "#A8CCE5" }}>JPG, PNG, WEBP — up to 10MB</div>
+                  </>
+                )}
+                <input ref={fileRef} type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => handleFile(e.target.files[0])} />
+              </div>
+
+              <div style={{ textAlign: "center" }}>
+                <button disabled={!canProceed} onClick={() => setStep(3)}
+                  style={{ padding: "15px 56px", fontSize: 15, fontWeight: 600, fontFamily: "'DM Sans', sans-serif", background: canProceed ? "#1B3A5C" : "#C5DCF0", color: "#fff", border: "none", borderRadius: 99, cursor: canProceed ? "pointer" : "not-allowed", boxShadow: canProceed ? "0 4px 20px rgba(27,58,92,.2)" : "none", transition: "all .2s" }}>
+                  {!selectedStyle ? "Select a style to continue" : !uploadedImage ? "Select a design to continue" : "Next: Customize →"}
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      /* ── GENERATING ── */
+      if (generating) {
+        return (
+          <div style={cs}><Header />
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "60vh", gap: 24 }}>
+              <div style={{ width: 48, height: 48, border: "3px solid #C5DCF0", borderTopColor: "#1a1a1a", borderRadius: "50%", animation: "spin 1s linear infinite" }} />
+              <div style={{ fontWeight: 500, fontSize: 16 }}>AI agents at work…</div>
+              <div style={{ color: "#999", fontSize: 14, maxWidth: 380, textAlign: "center", lineHeight: 1.6, animation: "pulse 2s ease-in-out infinite" }}>{generatingStatus}</div>
+            </div>
+          </div>
+        );
+      }
+
+      /* ── CUSTOMIZE ── */
+      if (step === 3) {
+        return (
+          <div style={cs}><Header />
+            <div style={{ maxWidth: 760, margin: "48px auto", padding: "0 24px" }}>
+              <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 32, fontWeight: 400, margin: "0 0 40px", textAlign: "center" }}>Perfect the fit</h2>
+              <div style={{ display: "grid", gridTemplateColumns: "280px 1fr", gap: 36, alignItems: "start" }}>
+                <div style={{ position: "sticky", top: 24, background: "#fff", borderRadius: 20, border: "1.5px solid #C5DCF0", padding: "30px 20px", display: "flex", flexDirection: "column", alignItems: "center" }}>
+                  <SuitPreview suitStyle={selectedStyle} patternUrl={uploadedImage} size={220} />
+                  <p style={{ fontSize: 11, color: "#bbb", marginTop: 14 }}>Live preview</p>
+                </div>
+                <div>
+                  <div style={{ marginBottom: 32 }}>
+                    <label style={{ fontSize: 13, fontWeight: 600, textTransform: "uppercase", letterSpacing: 2, color: "#888", display: "block", marginBottom: 14 }}>Size</label>
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                      {SIZES.map(s => <Pill key={s} selected={selectedSize === s} onClick={() => setSelectedSize(s)}>{s}</Pill>)}
+                    </div>
+                  </div>
+                  <div style={{ marginBottom: 32 }}>
+                    <label style={{ fontSize: 13, fontWeight: 600, textTransform: "uppercase", letterSpacing: 2, color: "#888", display: "block", marginBottom: 14 }}>Fabric</label>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                      {FABRICS.map(f => (
+                        <div key={f.id} onClick={() => setSelectedFabric(f.id)} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 18px", borderRadius: 14, border: selectedFabric === f.id ? "2px solid #1a1a1a" : "1.5px solid #C5DCF0", cursor: "pointer", background: selectedFabric === f.id ? "#fff" : "transparent" }}>
+                          <div><div style={{ fontWeight: 600, fontSize: 14 }}>{f.label}</div><div style={{ fontSize: 12, color: "#999", marginTop: 2 }}>{f.desc}</div></div>
+                          <div style={{ fontSize: 13, fontWeight: 500 }}>{f.price === 0 ? "Included" : "+$" + f.price}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div style={{ background: "#fff", borderRadius: 16, padding: "18px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", border: "1.5px solid #C5DCF0" }}>
+                    <div><div style={{ fontWeight: 600, fontSize: 15 }}>{STYLES.find(s => s.id === selectedStyle)?.label} · {selectedSize}</div><div style={{ fontSize: 13, color: "#999" }}>{fabric?.label}</div></div>
+                    <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 22 }}>${totalPrice}</div>
+                  </div>
+                  <div style={{ textAlign: "center", marginTop: 28 }}>
+                    <button onClick={handleGenerate} disabled={generating} style={{ padding: "16px 52px", fontSize: 15, fontWeight: 600, fontFamily: "'DM Sans', sans-serif", background: "#1a1a1a", color: "#fff", border: "none", borderRadius: 99, cursor: "pointer", boxShadow: "0 4px 20px rgba(0,0,0,.12)" }}>Generate My Suit ✦</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      /* ── PREVIEW ── */
+      if (step === 4) {
+        const sl = STYLES.find(s => s.id === selectedStyle);
+        return (
+          <div style={cs}><Header />
+            <div style={{ maxWidth: 900, margin: "48px auto", padding: "0 24px", animation: "fadeUp .6s ease-out" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 40, alignItems: "start" }}>
+                <div>
+                  <div style={{ background: "#fff", borderRadius: 24, border: "1.5px solid #C5DCF0", padding: generatedImage ? "16px" : "40px 30px", display: "flex", flexDirection: "column", alignItems: "center", boxShadow: "0 4px 20px rgba(0,0,0,.04)", overflow: "hidden" }}>
+                    {generatedImage ? (
+                      <img src={generatedImage} alt="AI generated swimsuit" style={{ width: "100%", borderRadius: 14, objectFit: "contain", maxHeight: 420 }} />
+                    ) : generateError ? (
+                      <div style={{ textAlign: "center", padding: "20px 0" }}>
+                        <div style={{ fontSize: 13, color: "#e07070", marginBottom: 16, lineHeight: 1.5 }}>⚠ {generateError}<br/><span style={{ color: "#aaa" }}>Showing SVG preview instead</span></div>
+                        <SuitPreview suitStyle={selectedStyle} patternUrl={uploadedImage} size={280} />
+                      </div>
+                    ) : (
+                      <SuitPreview suitStyle={selectedStyle} patternUrl={uploadedImage} size={280} />
+                    )}
+                    <div style={{ marginTop: 14, background: "rgba(74,144,196,.08)", borderRadius: 10, padding: "7px 14px", fontSize: 11, fontWeight: 600, color: "#4A90C4" }}>
+                      {generatedImage ? "✦ Gemini AI-generated preview" : "✦ Pattern preview"}
+                    </div>
+                  </div>
+                  {generatedImage && (
+                    <button onClick={() => { setGeneratedImage(null); setStep(3); }} style={{ marginTop: 10, width: "100%", padding: "9px", fontSize: 12, fontFamily: "'DM Sans', sans-serif", background: "transparent", color: "#7AAEC8", border: "1px solid #C5DCF0", borderRadius: 99, cursor: "pointer" }}>↺ Regenerate</button>
+                  )}
+                </div>
+                <div>
+                  <div style={{ fontSize: 13, letterSpacing: 3, textTransform: "uppercase", color: "#999", marginBottom: 8 }}>Your Custom Suit</div>
+                  <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 28, fontWeight: 400, margin: "0 0 24px" }}>{sl?.label} · {fabric?.label}</h2>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 16, marginBottom: 28 }}>
+                    {[["Style", sl?.label],["Size", selectedSize],["Fabric", fabric?.label],["Est. Delivery", "7–10 business days"],["Manufacturer", "Verified partner (Guangzhou)"]].map(([k, v]) => (
+                      <div key={k} style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid #C5DCF0", paddingBottom: 12 }}>
+                        <span style={{ color: "#999", fontSize: 14 }}>{k}</span>
+                        <span style={{ fontWeight: 500, fontSize: 14 }}>{v}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 32, marginBottom: 24 }}>${totalPrice}.00</div>
+                  <button onClick={() => setStep(5)} style={{ width: "100%", padding: "16px", fontSize: 16, fontWeight: 600, fontFamily: "'DM Sans', sans-serif", background: "#4A90C4", color: "#fff", border: "none", borderRadius: 99, cursor: "pointer", boxShadow: "0 4px 20px rgba(74,144,196,.25)", marginBottom: 12 }}>Place Order →</button>
+                  <button onClick={() => setStep(3)} style={{ width: "100%", padding: "14px", fontSize: 14, fontFamily: "'DM Sans', sans-serif", background: "transparent", color: "#999", border: "1.5px solid #C5DCF0", borderRadius: 99, cursor: "pointer" }}>← Edit Design</button>
+                  <div style={{ marginTop: 28, background: "#fff", borderRadius: 14, border: "1.5px solid #C5DCF0", padding: "16px 18px" }}>
+                    <div style={{ fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: 2, color: "#bbb", marginBottom: 14 }}>Agent Activity</div>
+                    {[
+                      { agent: "Design Agent", status: "Pattern mapped to " + sl?.label + " template", t: "1.2s", done: true },
+                      { agent: "Fit Agent", status: "Size " + selectedSize + " calibrated", t: "0.4s", done: true },
+                      { agent: "Supplier Agent", status: "Quote received — $18.40/unit", t: "2.1s", done: true },
+                      { agent: "QC Agent", status: "Pre-production check queued", t: "—", done: false },
+                    ].map((a, i) => (
+                      <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10, fontSize: 13 }}>
+                        <div style={{ width: 8, height: 8, borderRadius: "50%", background: a.done ? "#4A90C4" : "#C5DCF0", flexShrink: 0 }} />
+                        <span style={{ fontWeight: 500, minWidth: 110 }}>{a.agent}</span>
+                        <span style={{ color: "#999", flex: 1 }}>{a.status}</span>
+                        <span style={{ color: "#ccc", fontSize: 12 }}>{a.t}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      }
+      /* ── CHECKOUT ── */
+      if (step === 5) {
+        const sl = STYLES.find(s => s.id === selectedStyle);
+        const inputStyle = { width: "100%", padding: "12px 14px", fontSize: 14, fontFamily: "'DM Sans', sans-serif", border: "1.5px solid #C5DCF0", borderRadius: 10, background: "#fff", color: "#1a1a1a", outline: "none", boxSizing: "border-box" };
+        const labelStyle = { fontSize: 12, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1.5, color: "#888", display: "block", marginBottom: 6 };
+        const fieldStyle = { marginBottom: 18 };
+        return (
+          <div style={cs}><Header />
+            <div style={{ maxWidth: 820, margin: "48px auto", padding: "0 24px", animation: "fadeUp .5s ease-out" }}>
+              <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 32, fontWeight: 400, margin: "0 0 36px", textAlign: "center" }}>Checkout</h2>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 340px", gap: 32, alignItems: "start" }}>
+                {/* Left: form */}
+                <div>
+                  {/* Delivery */}
+                  <div style={{ background: "#fff", borderRadius: 18, border: "1.5px solid #C5DCF0", padding: "24px 24px 8px", marginBottom: 20 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, textTransform: "uppercase", letterSpacing: 2, marginBottom: 18, color: "#1a1a1a" }}>Delivery Address</div>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                      <div style={fieldStyle}><label style={labelStyle}>First Name</label><input style={inputStyle} placeholder="Jane" /></div>
+                      <div style={fieldStyle}><label style={labelStyle}>Last Name</label><input style={inputStyle} placeholder="Smith" /></div>
+                    </div>
+                    <div style={fieldStyle}><label style={labelStyle}>Address</label><input style={inputStyle} placeholder="123 Ocean Ave" /></div>
+                    <div style={fieldStyle}><label style={labelStyle}>Apt / Suite (optional)</label><input style={inputStyle} placeholder="Apt 4B" /></div>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 14 }}>
+                      <div style={fieldStyle}><label style={labelStyle}>City</label><input style={inputStyle} placeholder="Miami" /></div>
+                      <div style={fieldStyle}><label style={labelStyle}>State</label><input style={inputStyle} placeholder="FL" /></div>
+                      <div style={fieldStyle}><label style={labelStyle}>ZIP</label><input style={inputStyle} placeholder="33101" /></div>
+                    </div>
+                    <div style={fieldStyle}><label style={labelStyle}>Country</label><input style={inputStyle} placeholder="United States" /></div>
+                  </div>
+                  {/* Payment */}
+                  <div style={{ background: "#fff", borderRadius: 18, border: "1.5px solid #C5DCF0", padding: "24px 24px 8px" }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, textTransform: "uppercase", letterSpacing: 2, marginBottom: 18, color: "#1a1a1a" }}>Payment</div>
+                    <div style={fieldStyle}><label style={labelStyle}>Cardholder Name</label><input style={inputStyle} placeholder="Jane Smith" /></div>
+                    <div style={fieldStyle}>
+                      <label style={labelStyle}>Card Number</label>
+                      <div style={{ position: "relative" }}>
+                        <input style={{ ...inputStyle, paddingRight: 80 }} placeholder="1234 5678 9012 3456" maxLength={19} />
+                        <span style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", fontSize: 18, pointerEvents: "none" }}>💳</span>
+                      </div>
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                      <div style={fieldStyle}><label style={labelStyle}>Expiry</label><input style={inputStyle} placeholder="MM / YY" maxLength={7} /></div>
+                      <div style={fieldStyle}><label style={labelStyle}>CVV</label><input style={inputStyle} placeholder="•••" maxLength={4} type="password" /></div>
+                    </div>
+                  </div>
+                </div>
+                {/* Right: order summary */}
+                <div style={{ position: "sticky", top: 24 }}>
+                  <div style={{ background: "#fff", borderRadius: 18, border: "1.5px solid #C5DCF0", padding: "24px" }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, textTransform: "uppercase", letterSpacing: 2, marginBottom: 16, color: "#1a1a1a" }}>Order Summary</div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 18, paddingBottom: 18, borderBottom: "1px solid #C5DCF0" }}>
+                      <div style={{ width: 64, height: 64, borderRadius: 12, overflow: "hidden", border: "1px solid #e8e4de", flexShrink: 0 }}>
+                        <img src={uploadedImage} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      </div>
+                      <div>
+                        <div style={{ fontWeight: 600, fontSize: 14 }}>{sl?.label}</div>
+                        <div style={{ fontSize: 13, color: "#999", marginTop: 2 }}>{fabric?.label} · Size {selectedSize}</div>
+                      </div>
+                    </div>
+                    {[["Subtotal", "$" + totalPrice + ".00"], ["Shipping", "Free"], ["Est. Delivery", "7–10 days"]].map(([k, v]) => (
+                      <div key={k} style={{ display: "flex", justifyContent: "space-between", fontSize: 14, marginBottom: 10 }}>
+                        <span style={{ color: "#999" }}>{k}</span>
+                        <span style={{ fontWeight: 500 }}>{v}</span>
+                      </div>
+                    ))}
+                    <div style={{ display: "flex", justifyContent: "space-between", borderTop: "1px solid #C5DCF0", paddingTop: 14, marginTop: 6 }}>
+                      <span style={{ fontWeight: 600 }}>Total</span>
+                      <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 20 }}>${totalPrice}.00</span>
+                    </div>
+                    <button onClick={handlePlaceOrder} style={{ marginTop: 20, width: "100%", padding: "15px", fontSize: 15, fontWeight: 600, fontFamily: "'DM Sans', sans-serif", background: "#4A90C4", color: "#fff", border: "none", borderRadius: 99, cursor: "pointer", boxShadow: "0 4px 20px rgba(74,144,196,.25)" }}>Confirm &amp; Pay →</button>
+                    <button onClick={() => setStep(4)} style={{ marginTop: 10, width: "100%", padding: "12px", fontSize: 13, fontFamily: "'DM Sans', sans-serif", background: "transparent", color: "#999", border: "1.5px solid #C5DCF0", borderRadius: 99, cursor: "pointer" }}>← Back</button>
+                    <div style={{ marginTop: 16, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, fontSize: 11, color: "#bbb" }}>
+                      <span>🔒</span><span>Secured with 256-bit encryption</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      /* ── ORDER CONFIRMATION ── */
+      if (step === 6) {
+        const sl = STYLES.find(s => s.id === selectedStyle);
+        return (
+          <div style={cs}><Header />
+            <div style={{ maxWidth: 520, margin: "80px auto", padding: "0 24px", textAlign: "center", animation: "fadeUp .6s ease-out" }}>
+              <div style={{ fontSize: 56, marginBottom: 24 }}>🌊</div>
+              <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 36, fontWeight: 400, margin: "0 0 12px" }}>Order Placed!</h2>
+              <p style={{ color: "#777", fontSize: 16, lineHeight: 1.6, margin: "0 0 36px" }}>Your custom {sl?.label} is being crafted. You'll receive a confirmation email shortly.</p>
+              <div style={{ background: "#fff", borderRadius: 20, border: "1.5px solid #C5DCF0", padding: "24px 28px", marginBottom: 32, textAlign: "left" }}>
+                {[["Style", sl?.label], ["Size", selectedSize], ["Fabric", fabric?.label], ["Est. Delivery", "7–10 business days"], ["Total", "$" + totalPrice + ".00"]].map(([k, v]) => (
+                  <div key={k} style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid #C5DCF0", padding: "10px 0" }}>
+                    <span style={{ color: "#999", fontSize: 14 }}>{k}</span>
+                    <span style={{ fontWeight: 500, fontSize: 14 }}>{v}</span>
+                  </div>
+                ))}
+              </div>
+              <button onClick={() => { setStep(0); setUploadedImage(null); setSelectedStyle(null); setSelectedSize("M"); setSelectedFabric("eco"); setGeneratedImage(null); setGenerateError(null); }} style={{ padding: "14px 40px", fontSize: 15, fontWeight: 600, fontFamily: "'DM Sans', sans-serif", background: "#1a1a1a", color: "#fff", border: "none", borderRadius: 99, cursor: "pointer" }}>Design Another →</button>
+            </div>
+          </div>
+        );
+      }
+
+      return null;
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById("root"));
+    root.render(<App />);
+  </script>
+</body>
+</html>
