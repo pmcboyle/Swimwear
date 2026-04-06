@@ -230,21 +230,6 @@
     // Paste your Google Apps Script web app URL here after setup:
     const APPS_SCRIPT_URL = "YOUR_APPS_SCRIPT_URL_HERE";
 
-    // Paste your Gemini API key here:
-    const GEMINI_API_KEY = "AIzaSyAWMYegaVRUJMRU1xsBNRYud_aTY-9jNxc";
-
-    async function imageUrlToBase64(url) {
-      if (url.startsWith("data:")) {
-        return { data: url.split(",")[1], mimeType: url.split(";")[0].split(":")[1] };
-      }
-      const resp = await fetch(url);
-      const blob = await resp.blob();
-      return new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve({ data: reader.result.split(",")[1], mimeType: blob.type });
-        reader.readAsDataURL(blob);
-      });
-    }
 
     function App() {
       const [step, setStep] = useState(0);
@@ -256,8 +241,6 @@
       const [dragOver, setDragOver] = useState(false);
       const [generating, setGenerating] = useState(false);
       const [generatingStatus, setGeneratingStatus] = useState("");
-      const [generatedImage, setGeneratedImage] = useState(null);
-      const [generateError, setGenerateError] = useState(null);
       const fileRef = useRef();
 
       const fabric = FABRICS.find(f => f.id === selectedFabric);
@@ -297,74 +280,22 @@
         setStep(6);
       };
 
-      const handleGenerate = async () => {
+      const handleGenerate = () => {
         setGenerating(true);
-        setGeneratedImage(null);
-        setGenerateError(null);
-
-        const styleLabels = {
-          bikini:    "triangle bikini top and high-cut bikini bottoms swimsuit set",
-          onepiece:  "sleek one-piece swimsuit",
-          tankini:   "tankini swimsuit with tank top and bikini bottoms",
-          highwaist: "high-waist retro bikini set with triangle top",
-        };
-        const styleLabel = styleLabels[selectedStyle] || "swimsuit";
-
-        try {
-          // ── Step 1: describe the uploaded pattern using Gemini Flash ──
-          setGeneratingStatus("Analyzing your design pattern…");
-          const { data, mimeType } = await imageUrlToBase64(uploadedImage);
-
-          const descResp = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                contents: [{
-                  parts: [
-                    { text: "Describe this image as a swimwear fabric print in 2-3 sentences. Focus only on the visual design: colors, patterns, shapes, textures, motifs. Be specific and vivid. Do not mention the word 'uploaded' or refer to it as an image." },
-                    { inline_data: { mime_type: mimeType, data } }
-                  ]
-                }]
-              })
-            }
-          );
-          const descResult = await descResp.json();
-          if (descResult.error) throw new Error("Pattern analysis failed: " + descResult.error.message);
-          const patternDesc = descResult.candidates?.[0]?.content?.parts?.[0]?.text || "vibrant colorful printed fabric";
-
-          // ── Step 2: generate photorealistic swimsuit with Imagen 3 ──
-          setGeneratingStatus("Generating photorealistic swimsuit…");
-          const prompt = `High-end fashion catalog product photography of a ${styleLabel}. The swimsuit is made from fabric printed with the following design: ${patternDesc}. Photographed as a professional flat lay on a pure white background. The swimsuit looks brand new, perfectly laid out, showing all panels clearly. Photorealistic, crisp studio lighting, sharp fabric texture detail, 4K quality, no model, no props.`;
-
-          const imgResp = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${GEMINI_API_KEY}`,
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                instances: [{ prompt }],
-                parameters: { sampleCount: 1, aspectRatio: "1:1" }
-              })
-            }
-          );
-          const imgResult = await imgResp.json();
-          if (imgResult.error) throw new Error("Image generation failed: " + imgResult.error.message);
-
-          const b64 = imgResult.predictions?.[0]?.bytesBase64Encoded;
-          const imgMime = imgResult.predictions?.[0]?.mimeType || "image/png";
-          if (!b64) throw new Error("No image returned from Imagen.");
-
-          setGeneratedImage(`data:${imgMime};base64,${b64}`);
-
-        } catch (err) {
-          console.error("Generation error:", err);
-          setGenerateError(err.message || "Generation failed");
-        }
-
-        setGenerating(false);
-        setStep(4);
+        const sl = STYLES.find(s => s.id === selectedStyle)?.label || "suit";
+        const statuses = [
+          "Analyzing your design…",
+          "Mapping pattern onto " + sl + "…",
+          "Calibrating size " + selectedSize + "…",
+          "Finalizing your custom " + sl + "…",
+        ];
+        let i = 0;
+        setGeneratingStatus(statuses[0]);
+        const interval = setInterval(() => {
+          i++;
+          if (i < statuses.length) { setGeneratingStatus(statuses[i]); }
+          else { clearInterval(interval); setGenerating(false); setStep(4); }
+        }, 1000);
       };
 
       useEffect(() => {
@@ -694,24 +625,10 @@
             <div style={{ maxWidth: 900, margin: "48px auto", padding: "0 24px", animation: "fadeUp .6s ease-out" }}>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 40, alignItems: "start" }}>
                 <div>
-                  <div style={{ background: "#fff", borderRadius: 24, border: "1.5px solid #C5DCF0", padding: generatedImage ? "16px" : "40px 30px", display: "flex", flexDirection: "column", alignItems: "center", boxShadow: "0 4px 20px rgba(0,0,0,.04)", overflow: "hidden" }}>
-                    {generatedImage ? (
-                      <img src={generatedImage} alt="AI generated swimsuit" style={{ width: "100%", borderRadius: 14, objectFit: "contain", maxHeight: 420 }} />
-                    ) : generateError ? (
-                      <div style={{ textAlign: "center", padding: "20px 0" }}>
-                        <div style={{ fontSize: 13, color: "#e07070", marginBottom: 16, lineHeight: 1.5 }}>⚠ {generateError}<br/><span style={{ color: "#aaa" }}>Showing SVG preview instead</span></div>
-                        <SuitPreview suitStyle={selectedStyle} patternUrl={uploadedImage} size={280} />
-                      </div>
-                    ) : (
-                      <SuitPreview suitStyle={selectedStyle} patternUrl={uploadedImage} size={280} />
-                    )}
-                    <div style={{ marginTop: 14, background: "rgba(74,144,196,.08)", borderRadius: 10, padding: "7px 14px", fontSize: 11, fontWeight: 600, color: "#4A90C4" }}>
-                      {generatedImage ? "✦ Gemini AI-generated preview" : "✦ Pattern preview"}
-                    </div>
+                  <div style={{ background: "#fff", borderRadius: 24, border: "1.5px solid #C5DCF0", padding: "40px 30px", display: "flex", flexDirection: "column", alignItems: "center", boxShadow: "0 4px 20px rgba(0,0,0,.04)" }}>
+                    <SuitPreview suitStyle={selectedStyle} patternUrl={uploadedImage} size={280} />
+                    <div style={{ marginTop: 14, background: "rgba(74,144,196,.08)", borderRadius: 10, padding: "7px 14px", fontSize: 11, fontWeight: 600, color: "#4A90C4" }}>✦ Pattern preview</div>
                   </div>
-                  {generatedImage && (
-                    <button onClick={() => { setGeneratedImage(null); setStep(3); }} style={{ marginTop: 10, width: "100%", padding: "9px", fontSize: 12, fontFamily: "'DM Sans', sans-serif", background: "transparent", color: "#7AAEC8", border: "1px solid #C5DCF0", borderRadius: 99, cursor: "pointer" }}>↺ Regenerate</button>
-                  )}
                 </div>
                 <div>
                   <div style={{ fontSize: 13, letterSpacing: 3, textTransform: "uppercase", color: "#999", marginBottom: 8 }}>Your Custom Suit</div>
@@ -848,7 +765,7 @@
                   </div>
                 ))}
               </div>
-              <button onClick={() => { setStep(0); setUploadedImage(null); setSelectedStyle(null); setSelectedSize("M"); setSelectedFabric("eco"); setGeneratedImage(null); setGenerateError(null); }} style={{ padding: "14px 40px", fontSize: 15, fontWeight: 600, fontFamily: "'DM Sans', sans-serif", background: "#1a1a1a", color: "#fff", border: "none", borderRadius: 99, cursor: "pointer" }}>Design Another →</button>
+              <button onClick={() => { setStep(0); setUploadedImage(null); setSelectedStyle(null); setSelectedSize("M"); setSelectedFabric("eco"); }} style={{ padding: "14px 40px", fontSize: 15, fontWeight: 600, fontFamily: "'DM Sans', sans-serif", background: "#1a1a1a", color: "#fff", border: "none", borderRadius: 99, cursor: "pointer" }}>Design Another →</button>
             </div>
           </div>
         );
