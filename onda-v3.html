@@ -257,19 +257,25 @@
           highwaist: "high-waist retro bikini set",
         };
 
-        const prompt = `plain white ${styleMap[selectedStyle] || "swimsuit"} flat lay, isolated on pure solid black background, no pattern no texture, clean studio lighting, fashion product photography, photorealistic`;
-        const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=512&height=512&model=flux-realism&nologo=true&seed=${Math.floor(Math.random()*99999)}`;
+        const prompt = `plain white ${styleMap[selectedStyle] || "swimsuit"} flat lay on solid black background, no pattern, studio lighting, fashion photography, photorealistic`;
+        const makeUrl = (seed) => `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=512&height=512&model=flux-realism&nologo=true&seed=${seed}`;
 
-        // Go straight to step 4 with SVG preview — photo loads in background and swaps in when ready
+        // Show SVG immediately, load photo in background
         setGenerating(false);
         setStep(4);
 
-        // Load photo in background, swap when done (60s timeout)
-        const bgImg = new Image();
-        bgImg.onload = () => setGeneratedImage(url);
-        bgImg.onerror = () => {};
-        bgImg.src = url;
-        setTimeout(() => { bgImg.onload = null; }, 60000);
+        const tryLoad = (seed, attempt) => {
+          const url = makeUrl(seed);
+          const img = new Image();
+          img.crossOrigin = "anonymous";
+          img.onload = () => setGeneratedImage(url);
+          img.onerror = () => {
+            if (attempt < 3) setTimeout(() => tryLoad(Math.floor(Math.random()*99999), attempt + 1), 3000);
+          };
+          img.src = url;
+          setTimeout(() => { img.onload = null; img.onerror = null; }, 45000);
+        };
+        tryLoad(Math.floor(Math.random()*99999), 1);
       };
 
       useEffect(() => {
@@ -620,7 +626,10 @@
                       <SuitPreview suitStyle={selectedStyle} patternUrl={uploadedImage} size={280} />
                     )}
                     {!generatedImage && (
-                      <div style={{ marginTop: 12, background: "rgba(74,144,196,.08)", borderRadius: 10, padding: "7px 14px", fontSize: 11, fontWeight: 600, color: "#4A90C4", animation: "pulse 2s ease-in-out infinite" }}>⟳ Loading photo preview…</div>
+                      <div style={{ marginTop: 12, background: "#EBF5FD", borderRadius: 10, padding: "10px 16px", fontSize: 12, fontWeight: 600, color: "#4A90C4", animation: "pulse 2s ease-in-out infinite", display: "flex", alignItems: "center", gap: 8 }}>
+                        <div style={{ width: 14, height: 14, border: "2px solid #C5DCF0", borderTopColor: "#4A90C4", borderRadius: "50%", animation: "spin 1s linear infinite", flexShrink: 0 }} />
+                        Generating realistic photo… (this takes ~20 sec)
+                      </div>
                     )}
                   </div>
                   {generatedImage && (
