@@ -241,6 +241,7 @@
       const [dragOver, setDragOver] = useState(false);
       const [generating, setGenerating] = useState(false);
       const [generatingStatus, setGeneratingStatus] = useState("");
+      const [generatedImage, setGeneratedImage] = useState(null);
       const fileRef = useRef();
 
       const fabric = FABRICS.find(f => f.id === selectedFabric);
@@ -280,22 +281,71 @@
         setStep(6);
       };
 
-      const handleGenerate = () => {
+      const handleGenerate = async () => {
         setGenerating(true);
-        const sl = STYLES.find(s => s.id === selectedStyle)?.label || "suit";
-        const statuses = [
-          "Analyzing your design…",
-          "Mapping pattern onto " + sl + "…",
-          "Calibrating size " + selectedSize + "…",
-          "Finalizing your custom " + sl + "…",
-        ];
-        let i = 0;
-        setGeneratingStatus(statuses[0]);
-        const interval = setInterval(() => {
-          i++;
-          if (i < statuses.length) { setGeneratingStatus(statuses[i]); }
-          else { clearInterval(interval); setGenerating(false); setStep(4); }
-        }, 1000);
+        setGeneratedImage(null);
+
+        const styleMap = {
+          bikini:    "triangle bikini top and bikini bottoms swimsuit set laid flat",
+          onepiece:  "one-piece swimsuit laid flat",
+          tankini:   "tankini set with tank top and bikini bottoms laid flat",
+          highwaist: "high-waist bikini set laid flat",
+        };
+
+        // Extract a design hint from the image name
+        const raw = imageName.replace(/\.[^/.]+$/, "").replace(/[^\w\s]/g, " ").trim().toLowerCase();
+        const designHint = raw || "colorful patterned";
+
+        // Sample dominant color from the uploaded image using canvas
+        let colorHint = "";
+        try {
+          await new Promise((resolve) => {
+            const img = new Image();
+            img.crossOrigin = "anonymous";
+            img.onload = () => {
+              const c = document.createElement("canvas");
+              c.width = 10; c.height = 10;
+              const ctx = c.getContext("2d");
+              ctx.drawImage(img, 0, 0, 10, 10);
+              const d = ctx.getImageData(0, 0, 10, 10).data;
+              let r = 0, g = 0, b = 0;
+              for (let i = 0; i < d.length; i += 4) { r += d[i]; g += d[i+1]; b += d[i+2]; }
+              const n = d.length / 4;
+              r = Math.round(r/n); g = Math.round(g/n); b = Math.round(b/n);
+              const colorNames = [[255,182,193,"pink"],[173,216,230,"light blue"],[144,238,144,"mint green"],[255,255,153,"yellow"],[255,165,0,"orange"],[147,112,219,"purple"],[255,99,71,"coral"],[64,224,208,"turquoise"],[0,0,0,"black"],[255,255,255,"white"]];
+              let best = "colorful", bestDist = Infinity;
+              for (const [cr,cg,cb,name] of colorNames) {
+                const dist = Math.sqrt((r-cr)**2+(g-cg)**2+(b-cb)**2);
+                if (dist < bestDist) { bestDist = dist; best = name; }
+              }
+              colorHint = best;
+              resolve();
+            };
+            img.onerror = resolve;
+            img.src = uploadedImage;
+          });
+        } catch {}
+
+        const prompt = `professional studio product photography of a ${styleMap[selectedStyle] || "swimsuit"}, ${colorHint} ${designHint} print fabric, clean white background, fashion catalog style, photorealistic, high resolution, sharp focus, no model, no mannequin, flat lay`;
+
+        setGeneratingStatus("Generating your swimsuit photo…");
+
+        const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=768&height=768&model=flux-realism&nologo=true&seed=${Math.floor(Math.random()*99999)}`;
+
+        try {
+          await new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = resolve;
+            img.onerror = reject;
+            img.src = url;
+          });
+          setGeneratedImage(url);
+        } catch {
+          // silently fall back to SVG preview
+        }
+
+        setGenerating(false);
+        setStep(4);
       };
 
       useEffect(() => {
@@ -625,10 +675,18 @@
             <div style={{ maxWidth: 900, margin: "48px auto", padding: "0 24px", animation: "fadeUp .6s ease-out" }}>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 40, alignItems: "start" }}>
                 <div>
-                  <div style={{ background: "#fff", borderRadius: 24, border: "1.5px solid #C5DCF0", padding: "40px 30px", display: "flex", flexDirection: "column", alignItems: "center", boxShadow: "0 4px 20px rgba(0,0,0,.04)" }}>
-                    <SuitPreview suitStyle={selectedStyle} patternUrl={uploadedImage} size={280} />
-                    <div style={{ marginTop: 14, background: "rgba(74,144,196,.08)", borderRadius: 10, padding: "7px 14px", fontSize: 11, fontWeight: 600, color: "#4A90C4" }}>✦ Pattern preview</div>
+                  <div style={{ background: "#fff", borderRadius: 24, border: "1.5px solid #C5DCF0", padding: generatedImage ? "12px" : "40px 30px", display: "flex", flexDirection: "column", alignItems: "center", boxShadow: "0 4px 20px rgba(0,0,0,.04)", overflow: "hidden" }}>
+                    {generatedImage
+                      ? <img src={generatedImage} alt="Generated swimsuit" style={{ width: "100%", borderRadius: 16, objectFit: "cover" }} />
+                      : <SuitPreview suitStyle={selectedStyle} patternUrl={uploadedImage} size={280} />
+                    }
+                    <div style={{ marginTop: 12, background: "rgba(74,144,196,.08)", borderRadius: 10, padding: "7px 14px", fontSize: 11, fontWeight: 600, color: "#4A90C4" }}>
+                      {generatedImage ? "✦ AI-generated product photo" : "✦ Pattern preview"}
+                    </div>
                   </div>
+                  {generatedImage && (
+                    <button onClick={() => { setGeneratedImage(null); handleGenerate(); }} style={{ marginTop: 8, width: "100%", padding: "9px", fontSize: 12, fontFamily: "'DM Sans', sans-serif", background: "transparent", color: "#7AAEC8", border: "1px solid #C5DCF0", borderRadius: 99, cursor: "pointer" }}>↺ Regenerate photo</button>
+                  )}
                 </div>
                 <div>
                   <div style={{ fontSize: 13, letterSpacing: 3, textTransform: "uppercase", color: "#999", marginBottom: 8 }}>Your Custom Suit</div>
@@ -765,7 +823,7 @@
                   </div>
                 ))}
               </div>
-              <button onClick={() => { setStep(0); setUploadedImage(null); setSelectedStyle(null); setSelectedSize("M"); setSelectedFabric("eco"); }} style={{ padding: "14px 40px", fontSize: 15, fontWeight: 600, fontFamily: "'DM Sans', sans-serif", background: "#1a1a1a", color: "#fff", border: "none", borderRadius: 99, cursor: "pointer" }}>Design Another →</button>
+              <button onClick={() => { setStep(0); setUploadedImage(null); setSelectedStyle(null); setSelectedSize("M"); setSelectedFabric("eco"); setGeneratedImage(null); }} style={{ padding: "14px 40px", fontSize: 15, fontWeight: 600, fontFamily: "'DM Sans', sans-serif", background: "#1a1a1a", color: "#fff", border: "none", borderRadius: 99, cursor: "pointer" }}>Design Another →</button>
             </div>
           </div>
         );
