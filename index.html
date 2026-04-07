@@ -34,10 +34,10 @@
     ];
     const BASE_PRICE = 58;
     const TRENDING = [
-      { id: "floral", icon: "🌺", label: "Floral", tag: "#1 this week", imageUrl: "https://images.pexels.com/photos/931177/pexels-photo-931177.jpeg?auto=compress&cs=tinysrgb&w=800" },
-      { id: "ocean", icon: "🌊", label: "Ocean", tag: "Trending now", imageUrl: "https://images.pexels.com/photos/1032650/pexels-photo-1032650.jpeg?auto=compress&cs=tinysrgb&w=800" },
-      { id: "abstract", icon: "🎨", label: "Abstract", tag: "Fan favourite", imageUrl: "https://images.pexels.com/photos/2693212/pexels-photo-2693212.png?auto=compress&cs=tinysrgb&w=800" },
-      { id: "animal", icon: "🐆", label: "Animal Print", tag: "Hot right now", imageUrl: "https://images.pexels.com/photos/2086361/pexels-photo-2086361.jpeg?auto=compress&cs=tinysrgb&w=800" },
+      { id: "floral",   label: "Floral",       tag: "#1 this week",   imageUrl: "trend-floral.webp" },
+      { id: "ocean",    label: "Ocean",         tag: "Trending now",   imageUrl: "trend-ocean.webp" },
+      { id: "abstract", label: "Abstract",      tag: "Fan favorite",   imageUrl: "trend-abstract.webp" },
+      { id: "animal",   label: "Animal Print",  tag: "Hot right now",  imageUrl: "trend-animal.jpg" },
     ];
 
     /*
@@ -488,8 +488,7 @@
                   <button key={t.id} onClick={() => handleTrending(t)}
                     style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, padding: "0 0 12px", width: 130, borderRadius: 16, border: uploadedImage === t.imageUrl ? "2.5px solid #1B3A5C" : "1.5px solid #C5DCF0", background: "#fff", cursor: "pointer", fontFamily: "'DM Sans', sans-serif", overflow: "hidden", boxShadow: uploadedImage === t.imageUrl ? "0 6px 20px rgba(27,58,92,.14)" : "0 2px 8px rgba(0,0,0,.04)", transition: "all .2s" }}>
                     <img src={t.imageUrl} alt={t.label} style={{ width: "100%", height: 80, objectFit: "cover" }} />
-                    <span style={{ fontSize: 16, marginTop: 2 }}>{t.icon}</span>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: "#1B3A5C" }}>{t.label}</span>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: "#1B3A5C", marginTop: 6 }}>{t.label}</span>
                     <span style={{ fontSize: 10, color: "#4A90C4", fontWeight: 600 }}>{t.tag}</span>
                   </button>
                 ))}
