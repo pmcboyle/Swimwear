@@ -59,7 +59,7 @@
           <pattern id={patId} patternUnits="userSpaceOnUse" width={tileSize} height={tileSize}>
             {patternUrl
               ? <image href={patternUrl} x="0" y="0" width={tileSize} height={tileSize} preserveAspectRatio="xMidYMid slice" />
-              : <rect width={tileSize} height={tileSize} fill="#C5DCF0" />}
+              : <rect width={tileSize} height={tileSize} fill="#4A90C4" />}
           </pattern>
           <filter id={filtId} x="-25%" y="-15%" width="150%" height="140%">
             <feDropShadow dx="0" dy="10" stdDeviation="16" floodColor="#00000040" />
@@ -474,13 +474,9 @@
                 {STYLES.map(s => (
                   <div key={s.id} onClick={() => setSelectedStyle(s.id)}
                     style={{ border: selectedStyle === s.id ? "2.5px solid #1B3A5C" : "1.5px solid #C5DCF0", borderRadius: 18, cursor: "pointer", background: "#fff", transition: "all .2s", boxShadow: selectedStyle === s.id ? "0 8px 28px rgba(27,58,92,.14)" : "0 2px 8px rgba(0,0,0,.04)", transform: selectedStyle === s.id ? "translateY(-4px)" : "none", padding: uploadedImage ? "20px 10px 14px" : "28px 16px 20px", display: "flex", flexDirection: "column", alignItems: "center" }}>
-                    {uploadedImage ? (
-                      <div style={{ height: 200, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                        <SuitPreview suitStyle={s.id} patternUrl={uploadedImage} size={140} />
-                      </div>
-                    ) : (
-                      <div style={{ fontSize: 48, marginBottom: 10 }}>{s.icon}</div>
-                    )}
+                    <div style={{ height: 200, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <SuitPreview suitStyle={s.id} patternUrl={null} size={140} />
+                    </div>
                     <div style={{ fontWeight: 600, fontSize: 15, marginTop: 6, color: "#1B3A5C" }}>{s.label}</div>
                     <div style={{ fontSize: 12, color: "#7AAEC8", marginTop: 3 }}>{s.desc}</div>
                     {selectedStyle === s.id && <div style={{ marginTop: 8, width: 6, height: 6, borderRadius: "50%", background: "#4A90C4" }} />}
