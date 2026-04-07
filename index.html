@@ -273,24 +273,6 @@
         setGeneratedImage(null);
         setPhotoFailed(false);
         setStep(4);
-
-        const styleMap = {
-          bikini:    "bikini set with triangle top and bikini bottoms",
-          onepiece:  "one-piece swimsuit",
-          tankini:   "tankini set with tank top and bikini bottoms",
-          highwaist: "high-waist retro bikini set",
-        };
-        const prompt = `pure white ${styleMap[selectedStyle] || "swimsuit"} flat lay, completely white fabric, pure solid black background #000000, bright studio lighting, fashion product photography, photorealistic`;
-        const seed = Math.floor(Math.random() * 99999);
-        const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=512&height=512&model=flux-realism&nologo=true&seed=${seed}`;
-
-        let done = false;
-        const img = new Image();
-        img.onload = () => { done = true; setGeneratedImage(url); };
-        img.onerror = () => { done = true; setPhotoFailed(true); };
-        img.src = url;
-        // Give up after 2 minutes and show retry button
-        setTimeout(() => { if (!done) { img.onload = null; img.onerror = null; setPhotoFailed(true); } }, 120000);
       };
 
       useEffect(() => {
@@ -615,44 +597,20 @@
             <div style={{ maxWidth: 900, margin: "48px auto", padding: "0 24px", animation: "fadeUp .6s ease-out" }}>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 40, alignItems: "start" }}>
                 <div>
-                  <div style={{ background: generatedImage ? "#000" : "#fff", borderRadius: 24, border: "1.5px solid #C5DCF0", padding: generatedImage ? "0" : "40px 30px", display: "flex", flexDirection: "column", alignItems: "center", boxShadow: "0 4px 20px rgba(0,0,0,.08)", overflow: "hidden" }}>
-                    {generatedImage ? (
-                      <div style={{ position: "relative", width: "100%", lineHeight: 0 }}>
-                        {/* Base: white suit on black background */}
-                        <img src={generatedImage} alt="swimsuit" style={{ width: "100%", display: "block", borderRadius: 24 }} />
-                        {/* Pattern overlay: multiply only shows on white suit fabric, background stays black */}
-                        {uploadedImage && (
-                          <div style={{
-                            position: "absolute", inset: 0, borderRadius: 24,
-                            backgroundImage: `url(${uploadedImage})`,
-                            backgroundSize: "22% auto",
-                            backgroundRepeat: "repeat",
-                            mixBlendMode: "multiply",
-                          }} />
-                        )}
-                        <div style={{ position: "absolute", bottom: 12, left: "50%", transform: "translateX(-50%)", background: "rgba(74,144,196,.85)", borderRadius: 10, padding: "5px 12px", fontSize: 10, fontWeight: 600, color: "#fff", whiteSpace: "nowrap" }}>✦ Your design on a real swimsuit</div>
-                      </div>
-                    ) : photoFailed ? (
-                      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
-                        <SuitPreview suitStyle={selectedStyle} patternUrl={uploadedImage} size={280} />
-                        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
-                          <div style={{ fontSize: 13, color: "#e07", fontWeight: 600 }}>Photo generation timed out</div>
-                          <button onClick={handleGenerate} style={{ padding: "10px 28px", fontSize: 13, fontWeight: 600, fontFamily: "'DM Sans', sans-serif", background: "#1B3A5C", color: "#fff", border: "none", borderRadius: 99, cursor: "pointer" }}>↺ Try Again</button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
-                        <SuitPreview suitStyle={selectedStyle} patternUrl={uploadedImage} size={280} />
-                        <div style={{ display: "flex", alignItems: "center", gap: 8, background: "#EBF5FD", borderRadius: 10, padding: "10px 16px", fontSize: 12, fontWeight: 600, color: "#4A90C4", animation: "pulse 2s ease-in-out infinite" }}>
-                          <div style={{ width: 14, height: 14, border: "2px solid #C5DCF0", borderTopColor: "#4A90C4", borderRadius: "50%", animation: "spin 1s linear infinite", flexShrink: 0 }} />
-                          Generating realistic photo… (~20 sec)
-                        </div>
-                      </div>
+                  <div style={{ borderRadius: 24, border: "1.5px solid #C5DCF0", boxShadow: "0 4px 20px rgba(0,0,0,.08)", overflow: "hidden", position: "relative", lineHeight: 0, background: "#fff" }}>
+                    <img src={sl?.img} alt={sl?.label} style={{ width: "100%", display: "block" }} />
+                    {uploadedImage && (
+                      <div style={{
+                        position: "absolute", inset: 0,
+                        backgroundImage: `url(${uploadedImage})`,
+                        backgroundSize: "28% auto",
+                        backgroundRepeat: "repeat",
+                        mixBlendMode: "multiply",
+                        opacity: 0.88,
+                      }} />
                     )}
+                    <div style={{ position: "absolute", bottom: 12, left: "50%", transform: "translateX(-50%)", background: "rgba(74,144,196,.9)", borderRadius: 10, padding: "5px 14px", fontSize: 11, fontWeight: 600, color: "#fff", whiteSpace: "nowrap", lineHeight: "normal" }}>✦ Your design on a real swimsuit</div>
                   </div>
-                  {generatedImage && (
-                    <button onClick={() => { setGeneratedImage(null); handleGenerate(); }} style={{ marginTop: 8, width: "100%", padding: "9px", fontSize: 12, fontFamily: "'DM Sans', sans-serif", background: "transparent", color: "#7AAEC8", border: "1px solid #C5DCF0", borderRadius: 99, cursor: "pointer" }}>↺ Try a different photo</button>
-                  )}
                 </div>
                 <div>
                   <div style={{ fontSize: 13, letterSpacing: 3, textTransform: "uppercase", color: "#999", marginBottom: 8 }}>Your Custom Suit</div>
