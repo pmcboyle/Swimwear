@@ -289,8 +289,8 @@
         img.onload = () => { done = true; setGeneratedImage(url); };
         img.onerror = () => { done = true; setPhotoFailed(true); };
         img.src = url;
-        // Give up after 60 seconds and show retry button
-        setTimeout(() => { if (!done) { img.onload = null; img.onerror = null; setPhotoFailed(true); } }, 60000);
+        // Give up after 2 minutes and show retry button
+        setTimeout(() => { if (!done) { img.onload = null; img.onerror = null; setPhotoFailed(true); } }, 120000);
       };
 
       useEffect(() => {
