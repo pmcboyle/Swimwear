@@ -284,25 +284,61 @@
       /* ── LANDING ── */
       if (step === 0) {
         return (
-          <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", padding: 24, background: "linear-gradient(160deg, #EBF5FD 0%, #D6EAF8 100%)", fontFamily: "'DM Sans', sans-serif", position: "relative" }}>
-            <div style={{ position: "absolute", width: 480, height: 480, borderRadius: "50%", background: "radial-gradient(circle, rgba(74,144,196,.12) 0%, transparent 70%)", top: -100, right: -80, pointerEvents: "none" }} />
-            <div style={{ position: "absolute", width: 360, height: 360, borderRadius: "50%", background: "radial-gradient(circle, rgba(27,58,92,.08) 0%, transparent 70%)", bottom: -60, left: -60, pointerEvents: "none" }} />
-            <div style={{ fontSize: 12, letterSpacing: 5, textTransform: "uppercase", color: "#4A90C4", marginBottom: 20, fontWeight: 600 }}>Custom Swimwear</div>
-            <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: "clamp(44px, 8vw, 76px)", fontWeight: 400, lineHeight: 1.05, margin: 0, color: "#1B3A5C", maxWidth: 680 }}>
-              Made for{" "}<em style={{ fontStyle: "italic", color: "#4A90C4" }}>You</em>
-            </h1>
-            <p style={{ fontSize: 17, color: "#3E6480", maxWidth: 420, lineHeight: 1.65, margin: "24px 0 40px", fontWeight: 300 }}>
-              Pick your style, choose a pattern, and we'll handle everything — custom-made and delivered to your door.
-            </p>
-            <button onClick={() => setStep(1)} style={{ padding: "16px 52px", fontSize: 16, fontWeight: 600, fontFamily: "'DM Sans', sans-serif", background: "#1B3A5C", color: "#fff", border: "none", borderRadius: 99, cursor: "pointer", boxShadow: "0 4px 24px rgba(27,58,92,.25)" }}>Start Designing →</button>
-            <div style={{ marginTop: 56, display: "flex", gap: 36, color: "#7AAEC8", fontSize: 13 }}>
-              <span>✦ Made to order</span><span>✦ Ships in 7 days</span><span>✦ Sizes XXS – XXL</span>
+          <div style={{ minHeight: "100vh", fontFamily: "'DM Sans', sans-serif", background: "#0a0a0a", color: "#fff", display: "flex", flexDirection: "column" }}>
+            {/* Nav */}
+            <nav style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "24px 48px", position: "absolute", top: 0, left: 0, right: 0, zIndex: 10 }}>
+              <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 28, letterSpacing: 4, color: "#fff", fontWeight: 400 }}>ONDA</div>
+              <button onClick={() => setStep(1)} style={{ padding: "10px 28px", fontSize: 13, fontWeight: 600, fontFamily: "'DM Sans', sans-serif", background: "transparent", color: "#fff", border: "1.5px solid rgba(255,255,255,.5)", borderRadius: 99, cursor: "pointer", letterSpacing: 1 }}>Design Yours</button>
+            </nav>
+
+            {/* Hero — split layout */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", minHeight: "100vh" }}>
+              {/* Left: photo */}
+              <div style={{ position: "relative", overflow: "hidden" }}>
+                <img
+                  src="https://images.pexels.com/photos/1620760/pexels-photo-1620760.jpeg?auto=compress&cs=tinysrgb&w=900"
+                  alt="swimwear"
+                  style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center" }}
+                />
+                <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to right, transparent 60%, #0a0a0a 100%)" }} />
+              </div>
+
+              {/* Right: text */}
+              <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", padding: "80px 64px 80px 48px" }}>
+                <div style={{ fontSize: 11, letterSpacing: 5, textTransform: "uppercase", color: "rgba(255,255,255,.5)", marginBottom: 24 }}>Custom Swimwear Studio</div>
+                <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: "clamp(40px, 5vw, 68px)", fontWeight: 400, lineHeight: 1.1, margin: "0 0 24px", color: "#fff" }}>
+                  Wear your<br /><em style={{ color: "#7AAEC8" }}>own design</em>
+                </h1>
+                <p style={{ fontSize: 16, color: "rgba(255,255,255,.6)", lineHeight: 1.8, margin: "0 0 48px", maxWidth: 380 }}>
+                  Choose your style, upload your design or pick from our patterns — we print and deliver a custom swimsuit made just for you.
+                </p>
+                <div style={{ display: "flex", flexDirection: "column", gap: 14, maxWidth: 320 }}>
+                  <button onClick={() => setStep(1)} style={{ padding: "18px 0", fontSize: 15, fontWeight: 700, fontFamily: "'DM Sans', sans-serif", background: "#fff", color: "#0a0a0a", border: "none", borderRadius: 99, cursor: "pointer", letterSpacing: .5 }}>Start Designing →</button>
+                </div>
+                <div style={{ marginTop: 56, display: "flex", gap: 32 }}>
+                  {[["100+", "Patterns"], ["7 days", "Delivery"], ["XXS–XXL", "All sizes"]].map(([n, l]) => (
+                    <div key={l}>
+                      <div style={{ fontSize: 20, fontWeight: 700, color: "#fff" }}>{n}</div>
+                      <div style={{ fontSize: 12, color: "rgba(255,255,255,.4)", marginTop: 2 }}>{l}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom strip */}
+            <div style={{ background: "#111", borderTop: "1px solid #222", padding: "20px 48px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div style={{ display: "flex", gap: 40 }}>
+                {["Eco-friendly fabrics", "Made to order", "Free shipping over $75"].map(t => (
+                  <span key={t} style={{ fontSize: 12, color: "rgba(255,255,255,.35)", letterSpacing: .5 }}>✦ {t}</span>
+                ))}
+              </div>
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,.25)" }}>© 2025 ONDA</div>
             </div>
           </div>
         );
       }
 
-      // ── PLACEHOLDER (step 0 old sections removed) ──
       if (false) {
         return (
           <div style={{ ...cs, overflowX: "hidden" }}>
