@@ -597,9 +597,21 @@
             <div style={{ maxWidth: 900, margin: "48px auto", padding: "0 24px", animation: "fadeUp .6s ease-out" }}>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 40, alignItems: "start" }}>
                 <div>
-                  <div style={{ borderRadius: 24, border: "1.5px solid #C5DCF0", boxShadow: "0 4px 20px rgba(0,0,0,.08)", overflow: "hidden", background: "#000", display: "flex", flexDirection: "column", alignItems: "center", padding: "32px 20px 20px" }}>
-                    <SuitPreview suitStyle={selectedStyle} patternUrl={uploadedImage} size={300} />
-                    <div style={{ marginTop: 14, background: "rgba(74,144,196,.9)", borderRadius: 10, padding: "5px 14px", fontSize: 11, fontWeight: 600, color: "#fff", whiteSpace: "nowrap" }}>✦ Your design on a real swimsuit</div>
+                  <div style={{ borderRadius: 24, border: "1.5px solid #222", boxShadow: "0 4px 20px rgba(0,0,0,.4)", overflow: "hidden", background: "#000", position: "relative", lineHeight: 0 }}>
+                    {/* Suit photo — multiply removes white background, leaving suit on black */}
+                    <img src={sl?.img} alt={sl?.label} style={{ width: "100%", display: "block", mixBlendMode: "multiply" }} />
+                    {/* Design overlay — screen blend shows design on the now-dark suit */}
+                    {uploadedImage && (
+                      <div style={{
+                        position: "absolute", inset: 0,
+                        backgroundImage: `url(${uploadedImage})`,
+                        backgroundSize: "28% auto",
+                        backgroundRepeat: "repeat",
+                        mixBlendMode: "screen",
+                        opacity: 0.75,
+                      }} />
+                    )}
+                    <div style={{ position: "absolute", bottom: 12, left: "50%", transform: "translateX(-50%)", background: "rgba(74,144,196,.9)", borderRadius: 10, padding: "5px 14px", fontSize: 11, fontWeight: 600, color: "#fff", whiteSpace: "nowrap", lineHeight: "normal" }}>✦ Your design on a real swimsuit</div>
                   </div>
                 </div>
                 <div>
