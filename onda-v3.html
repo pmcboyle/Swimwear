@@ -21,10 +21,10 @@
     const { useState, useRef, useEffect, useMemo } = React;
 
     const STYLES = [
-      { id: "bikini", label: "Bikini", icon: "👙", desc: "Classic two-piece" },
-      { id: "onepiece", label: "One Piece", icon: "🩱", desc: "Full coverage" },
-      { id: "tankini", label: "Tankini", icon: "👗", desc: "Tank top + bottom" },
-      { id: "highwaist", label: "High Waist", icon: "✨", desc: "Retro high-rise" },
+      { id: "bikini",    label: "Bikini",    icon: "👙", desc: "Classic two-piece",  img: "https://images.pexels.com/photos/1371360/pexels-photo-1371360.jpeg?auto=compress&cs=tinysrgb&w=400&h=500&fit=crop" },
+      { id: "onepiece",  label: "One Piece", icon: "🩱", desc: "Full coverage",       img: "https://images.pexels.com/photos/1549200/pexels-photo-1549200.jpeg?auto=compress&cs=tinysrgb&w=400&h=500&fit=crop" },
+      { id: "tankini",   label: "Tankini",   icon: "👗", desc: "Tank top + bottom",   img: "https://images.pexels.com/photos/3155666/pexels-photo-3155666.jpeg?auto=compress&cs=tinysrgb&w=400&h=500&fit=crop" },
+      { id: "highwaist", label: "High Waist",icon: "✨", desc: "Retro high-rise",     img: "https://images.pexels.com/photos/1430672/pexels-photo-1430672.jpeg?auto=compress&cs=tinysrgb&w=400&h=500&fit=crop" },
     ];
     const SIZES = ["XXS","XS","S","M","L","XL","XXL"];
     const FABRICS = [
@@ -207,25 +207,7 @@
       const [generating, setGenerating] = useState(false);
       const [generatingStatus, setGeneratingStatus] = useState("");
       const [generatedImage, setGeneratedImage] = useState(null);
-      const [styleCardImages, setStyleCardImages] = useState({});
       const fileRef = useRef();
-
-      // Preload realistic style card photos (plain white suit on light bg, no pattern needed)
-      const STYLE_CARD_SEEDS = { bikini: 42301, onepiece: 55892, tankini: 73614, highwaist: 18247 };
-      const STYLE_CARD_PROMPTS = {
-        bikini:    "white triangle string bikini set flat lay on white background, product photo, studio lighting, no shadows",
-        onepiece:  "white one piece swimsuit flat lay on white background, product photo, studio lighting",
-        tankini:   "white tankini set flat lay on white background, product photo, studio lighting",
-        highwaist: "white high waist retro bikini set flat lay on white background, product photo, studio lighting",
-      };
-      useEffect(() => {
-        ["bikini","onepiece","tankini","highwaist"].forEach(id => {
-          const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(STYLE_CARD_PROMPTS[id])}?width=400&height=480&model=flux-realism&nologo=true&seed=${STYLE_CARD_SEEDS[id]}`;
-          const img = new Image();
-          img.onload = () => setStyleCardImages(prev => ({ ...prev, [id]: url }));
-          img.src = url;
-        });
-      }, []);
 
       const fabric = FABRICS.find(f => f.id === selectedFabric);
       const totalPrice = BASE_PRICE + (fabric?.price || 0);
@@ -492,15 +474,8 @@
                 {STYLES.map(s => (
                   <div key={s.id} onClick={() => setSelectedStyle(s.id)}
                     style={{ border: selectedStyle === s.id ? "2.5px solid #1B3A5C" : "1.5px solid #C5DCF0", borderRadius: 18, cursor: "pointer", background: "#fff", transition: "all .2s", boxShadow: selectedStyle === s.id ? "0 8px 28px rgba(27,58,92,.14)" : "0 2px 8px rgba(0,0,0,.04)", transform: selectedStyle === s.id ? "translateY(-4px)" : "none", padding: uploadedImage ? "20px 10px 14px" : "28px 16px 20px", display: "flex", flexDirection: "column", alignItems: "center" }}>
-                    <div style={{ height: 200, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      {styleCardImages[s.id] ? (
-                        <img src={styleCardImages[s.id]} alt={s.label} style={{ width: 150, height: 195, objectFit: "contain" }} />
-                      ) : (
-                        <div style={{ width: 130, height: 180, borderRadius: 12, background: "#F0F7FC", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 10 }}>
-                          <div style={{ width: 24, height: 24, border: "2.5px solid #C5DCF0", borderTopColor: "#4A90C4", borderRadius: "50%", animation: "spin 1s linear infinite" }} />
-                          <div style={{ fontSize: 11, color: "#AAC8E0" }}>Loading…</div>
-                        </div>
-                      )}
+                    <div style={{ height: 200, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", borderRadius: 10 }}>
+                      <img src={s.img} alt={s.label} style={{ width: "100%", height: 200, objectFit: "cover", borderRadius: 10 }} />
                     </div>
                     <div style={{ fontWeight: 600, fontSize: 15, marginTop: 6, color: "#1B3A5C" }}>{s.label}</div>
                     <div style={{ fontSize: 12, color: "#7AAEC8", marginTop: 3 }}>{s.desc}</div>
@@ -644,12 +619,10 @@
                         <div style={{ position: "absolute", bottom: 12, left: "50%", transform: "translateX(-50%)", background: "rgba(74,144,196,.85)", borderRadius: 10, padding: "5px 12px", fontSize: 10, fontWeight: 600, color: "#fff", whiteSpace: "nowrap" }}>✦ Your design on a real swimsuit</div>
                       </div>
                     ) : (
-                      <SuitPreview suitStyle={selectedStyle} patternUrl={uploadedImage} size={280} />
-                    )}
-                    {!generatedImage && (
-                      <div style={{ marginTop: 12, background: "#EBF5FD", borderRadius: 10, padding: "10px 16px", fontSize: 12, fontWeight: 600, color: "#4A90C4", animation: "pulse 2s ease-in-out infinite", display: "flex", alignItems: "center", gap: 8 }}>
-                        <div style={{ width: 14, height: 14, border: "2px solid #C5DCF0", borderTopColor: "#4A90C4", borderRadius: "50%", animation: "spin 1s linear infinite", flexShrink: 0 }} />
-                        Generating realistic photo… (this takes ~20 sec)
+                      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: 300, gap: 18 }}>
+                        <div style={{ width: 52, height: 52, border: "4px solid #D6EAF8", borderTopColor: "#4A90C4", borderRadius: "50%", animation: "spin 1s linear infinite" }} />
+                        <div style={{ fontWeight: 600, fontSize: 15, color: "#1B3A5C" }}>Creating your swimsuit…</div>
+                        <div style={{ fontSize: 13, color: "#7AAEC8", textAlign: "center", maxWidth: 220, lineHeight: 1.5 }}>Applying your design to a real photo. This takes about 20 seconds.</div>
                       </div>
                     )}
                   </div>
